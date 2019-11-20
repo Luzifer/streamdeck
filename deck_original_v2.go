@@ -8,6 +8,7 @@ import (
 	"image/jpeg"
 	"strings"
 
+	"github.com/disintegration/imaging"
 	"github.com/pkg/errors"
 	"github.com/sstallion/go-hid"
 )
@@ -58,7 +59,11 @@ func (d deckConfigOriginalV2) FillColor(keyIdx int, col color.RGBA) error {
 
 func (d deckConfigOriginalV2) FillImage(keyIdx int, img image.Image) error {
 	buf := new(bytes.Buffer)
-	if err := jpeg.Encode(buf, img, &jpeg.Options{Quality: 95}); err != nil {
+
+	// We need to rotate the image or it will be presented upside down
+	rimg := imaging.Rotate180(img)
+
+	if err := jpeg.Encode(buf, rimg, &jpeg.Options{Quality: 95}); err != nil {
 		return errors.Wrap(err, "Unable to encode jpeg")
 	}
 
