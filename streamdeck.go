@@ -11,9 +11,11 @@ import (
 const vendorElgato = 0x0fd9
 
 const (
+	// Streamdeck Original V2 (0fd9:006d) 15 keys
 	StreamDeckOriginalV2 uint16 = 0x006d
 )
 
+// EventType represents the state of a button (Up / Down)
 type EventType uint8
 
 const (
@@ -21,11 +23,13 @@ const (
 	EventTypeDown
 )
 
+// Event represents a state change on a button
 type Event struct {
 	Key  int
 	Type EventType
 }
 
+// Client manages the connection to the StreamDeck
 type Client struct {
 	cfg       deckConfig
 	dev       *hid.Device
@@ -35,6 +39,7 @@ type Client struct {
 	evts chan Event
 }
 
+// New creates a new Client for the given device (see constants for supported types)
 func New(devicePID uint16) (*Client, error) {
 	dev, err := hid.OpenFirst(vendorElgato, devicePID)
 	if err != nil {
@@ -58,23 +63,39 @@ func New(devicePID uint16) (*Client, error) {
 	return client, nil
 }
 
-func (c Client) Close() error            { return c.dev.Close() }
+// Close closes the underlying HID connection
+func (c Client) Close() error { return c.dev.Close() }
+
+// Serial returns the device serial
 func (c Client) Serial() (string, error) { return c.dev.GetSerialNbr() }
 
-func (c Client) FillColor(keyIdx int, col color.RGBA) error  { return c.cfg.FillColor(keyIdx, col) }
+// FillColor fills a key with a solid color
+func (c Client) FillColor(keyIdx int, col color.RGBA) error { return c.cfg.FillColor(keyIdx, col) }
+
+// FillImage fills a key with an image
 func (c Client) FillImage(keyIdx int, img image.Image) error { return c.cfg.FillImage(keyIdx, img) }
-func (c Client) FillPanel(img image.RGBA) error              { return c.cfg.FillPanel(img) }
 
+// FillPanel slices a big image and fills the keys with the parts
+func (c Client) FillPanel(img image.RGBA) error { return c.cfg.FillPanel(img) }
+
+// ClearKey fills a key with solid black
 func (c Client) ClearKey(keyIdx int) error { return c.cfg.ClearKey(keyIdx) }
-func (c Client) ClearAllKeys() error       { return c.cfg.ClearAllKeys() }
 
+// ClearAllKeys fills all keys with solid black
+func (c Client) ClearAllKeys() error { return c.cfg.ClearAllKeys() }
+
+// SetBrightness sets the brightness of the keys (0-100)
 func (c Client) SetBrightness(pct int) error { return c.cfg.SetBrightness(pct) }
 
+// ResetToLogo restores the original Elgato StreamDeck logo
 func (c Client) ResetToLogo() error { return c.cfg.ResetToLogo() }
 
+// GetFimwareVersion retrieves the firmware version
 func (c Client) GetFimwareVersion() (string, error) { return c.cfg.GetFimwareVersion() }
 
-func (c Client) Subscribe() <-chan Event   { return c.evts }
+// Subscribe returns a channel to listen for incoming events
+func (c Client) Subscribe() <-chan Event { return c.evts }
+
 func (c Client) emit(key int, t EventType) { c.evts <- Event{Key: key, Type: t} }
 
 func (c *Client) read() {
