@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Luzifer/rconfig/v2"
 	"github.com/Luzifer/streamdeck"
@@ -92,6 +94,11 @@ func main() {
 
 	// Initial setup
 
+	sigs := make(chan os.Signal)
+	signal.Notify(sigs, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
+
+	defer sd.ResetToLogo()
+
 	if err = sd.SetBrightness(userConfig.DefaultBrightness); err != nil {
 		log.WithError(err).Fatal("Unable to set brightness")
 	}
@@ -114,6 +121,9 @@ func main() {
 					log.WithError(err).Error("Unable to execute action")
 				}
 			}
+
+		case <-sigs:
+			return
 
 		}
 	}
