@@ -23,8 +23,9 @@ var (
 
 	currentBrightness int
 
-	userConfig config
-	activePage page
+	userConfig  config
+	activePage  page
+	activeLoops []refreshingDisplayElement
 
 	sd *streamdeck.Client
 
@@ -130,6 +131,14 @@ func main() {
 }
 
 func togglePage(page string) error {
+	// Reset potentially running looped elements
+	for _, l := range activeLoops {
+		if err := l.StopLoopDisplay(); err != nil {
+			return errors.Wrap(err, "Unable to stop element refresh")
+		}
+	}
+	activeLoops = nil
+
 	activePage = userConfig.Pages[page]
 	sd.ClearAllKeys()
 

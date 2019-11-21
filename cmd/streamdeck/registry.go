@@ -15,6 +15,11 @@ type displayElement interface {
 	Display(idx int, attributes map[string]interface{}) error
 }
 
+type refreshingDisplayElement interface {
+	StartLoopDisplay(idx int, attributes map[string]interface{}) error
+	StopLoopDisplay() error
+}
+
 var (
 	registeredActions             = map[string]reflect.Type{}
 	registeredActionsLock         sync.Mutex
@@ -53,7 +58,17 @@ func callDisplayElement(idx int, kd keyDefinition) error {
 		return errors.Errorf("Unknown display type %q", kd.Display.Type)
 	}
 
-	inst := reflect.New(t).Interface().(displayElement)
+	var inst interface{}
+	if t.Kind() == reflect.Ptr {
+		inst = reflect.New(t.Elem()).Interface()
+	} else {
+		inst = reflect.New(t).Interface()
+	}
 
-	return inst.Display(idx, kd.Display.Attributes)
+	if t.Implements(reflect.TypeOf((*refreshingDisplayElement)(nil)).Elem()) {
+		activeLoops = append(activeLoops, inst.(refreshingDisplayElement))
+		return inst.(refreshingDisplayElement).StartLoopDisplay(idx, kd.Display.Attributes)
+	}
+
+	return inst.(displayElement).Display(idx, kd.Display.Attributes)
 }

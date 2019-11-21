@@ -11,21 +11,25 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 )
 
 func init() {
-	registerDisplayElement("exec", displayElementCommand{})
+	registerDisplayElement("exec", &displayElementExec{})
 }
 
-type displayElementCommand struct{}
+type displayElementExec struct {
+	running bool
+}
 
-func (d displayElementCommand) Display(idx int, attributes map[string]interface{}) error {
+func (d displayElementExec) Display(idx int, attributes map[string]interface{}) error {
 	var (
 		err error
 		img draw.Image = image.NewRGBA(image.Rect(0, 0, sd.IconSize(), sd.IconSize()))
@@ -107,7 +111,35 @@ func (d displayElementCommand) Display(idx int, attributes map[string]interface{
 	return errors.Wrap(sd.FillImage(idx, img), "Unable to set image")
 }
 
-func (displayElementCommand) drawText(c *freetype.Context, text string, textColor color.Color, fontsize float64, border int) error {
+func (d *displayElementExec) StartLoopDisplay(idx int, attributes map[string]interface{}) error {
+	d.running = true
+
+	var interval = 5 * time.Second
+	if v, ok := attributes["interval"].(int); ok {
+		interval = time.Duration(v) * time.Second
+	}
+
+	go func() {
+		for tick := time.NewTicker(interval); ; <-tick.C {
+			if !d.running {
+				return
+			}
+
+			if err := d.Display(idx, attributes); err != nil {
+				log.WithError(err).Error("Unable to refresh element")
+			}
+		}
+	}()
+
+	return nil
+}
+
+func (d *displayElementExec) StopLoopDisplay() error {
+	d.running = false
+	return nil
+}
+
+func (displayElementExec) drawText(c *freetype.Context, text string, textColor color.Color, fontsize float64, border int) error {
 	c.SetSrc(image.NewUniform(color.RGBA{0x0, 0x0, 0x0, 0x0})) // Transparent for text size guessing
 
 	var (
@@ -140,7 +172,7 @@ func (displayElementCommand) drawText(c *freetype.Context, text string, textColo
 	return err
 }
 
-func (displayElementCommand) getImageFromDisk(filename string) (image.Image, error) {
+func (displayElementExec) getImageFromDisk(filename string) (image.Image, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to open image")
@@ -155,7 +187,7 @@ func (displayElementCommand) getImageFromDisk(filename string) (image.Image, err
 	return img, nil
 }
 
-func (displayElementCommand) loadFont() (*truetype.Font, error) {
+func (displayElementExec) loadFont() (*truetype.Font, error) {
 	fontRaw, err := ioutil.ReadFile(userConfig.RenderFont)
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to read font file")
