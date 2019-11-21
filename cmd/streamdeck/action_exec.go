@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"os/exec"
 
 	"github.com/pkg/errors"
@@ -28,6 +29,8 @@ func (actionExec) Execute(attributes map[string]interface{}) error {
 	}
 
 	command := exec.Command(args[0], args[1:]...)
+	command.Env = os.Environ()
+
 	if err := command.Start(); err != nil {
 		return errors.Wrap(err, "Unable to start command")
 	}
