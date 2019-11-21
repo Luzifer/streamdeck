@@ -162,7 +162,7 @@ func (displayElementExec) drawText(c *freetype.Context, text string, textColor c
 		break
 	}
 
-	c.SetSrc(image.NewUniform(textColor)) // TODO: Dynamic
+	c.SetSrc(image.NewUniform(textColor))
 
 	xcenter := (float64(sd.IconSize()-2*border) / 2.0) - (float64(int(float64(ext.X)/64)) / 2.0) + float64(border)
 	ycenter := (float64(sd.IconSize()-2*border) / 2.0) + (float64(c.PointToFixed(fontsize/2.0)/64) / 2.0) + float64(border)
