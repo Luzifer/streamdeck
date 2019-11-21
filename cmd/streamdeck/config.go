@@ -4,6 +4,7 @@ type config struct {
 	DefaultBrightness int             `yaml:"default_brightness"`
 	DefaultPage       string          `yaml:"default_page"`
 	Pages             map[string]page `yaml:"pages"`
+	RenderFont        string          `yaml:"render_font"`
 }
 
 type page struct {
