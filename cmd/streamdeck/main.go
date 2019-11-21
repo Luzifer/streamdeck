@@ -51,18 +51,30 @@ func init() {
 	}
 }
 
-func main() {
-	// Load config
+func loadConfig() error {
 	userConfFile, err := os.Open(cfg.Config)
 	if err != nil {
-		log.WithError(err).Fatal("Unable to open config")
+		return errors.Wrap(err, "Unable to open config")
+	}
+	defer userConfFile.Close()
+
+	var tempConf config
+	if err = yaml.NewDecoder(userConfFile).Decode(&tempConf); err != nil {
+		return errors.Wrap(err, "Unable to parse config")
 	}
 
-	if err = yaml.NewDecoder(userConfFile).Decode(&userConfig); err != nil {
-		log.WithError(err).Fatal("Unable to parse config")
-	}
+	userConfig = tempConf
 
-	userConfFile.Close()
+	return nil
+}
+
+func main() {
+	var err error
+
+	// Load config
+	if err = loadConfig(); err != nil {
+		log.WithError(err).Fatal("Unable to load config")
+	}
 
 	// Initalize control devices
 	kbd, err = uinput.CreateKeyboard()
