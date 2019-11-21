@@ -116,7 +116,7 @@ func main() {
 			}
 
 			kd := activePage.Keys[evt.Key]
-			if kd.On == "down" && evt.Type == streamdeck.EventTypeDown || kd.On == "up" && evt.Type == streamdeck.EventTypeUp || kd.On == "both" {
+			if kd.On == "down" && evt.Type == streamdeck.EventTypeDown || (kd.On == "up" || kd.On == "") && evt.Type == streamdeck.EventTypeUp || kd.On == "both" {
 				if err := triggerAction(kd); err != nil {
 					log.WithError(err).Error("Unable to execute action")
 				}
