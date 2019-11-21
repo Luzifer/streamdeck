@@ -111,6 +111,14 @@ func (d displayElementExec) Display(idx int, attributes map[string]interface{}) 
 	return errors.Wrap(sd.FillImage(idx, img), "Unable to set image")
 }
 
+func (d displayElementExec) NeedsLoop(attributes map[string]interface{}) bool {
+	if v, ok := attributes["interval"].(int); ok {
+		return v > 0
+	}
+
+	return false
+}
+
 func (d *displayElementExec) StartLoopDisplay(idx int, attributes map[string]interface{}) error {
 	d.running = true
 

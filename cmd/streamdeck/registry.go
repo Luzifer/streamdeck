@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type action interface {
@@ -16,6 +17,7 @@ type displayElement interface {
 }
 
 type refreshingDisplayElement interface {
+	NeedsLoop(attributes map[string]interface{}) bool
 	StartLoopDisplay(idx int, attributes map[string]interface{}) error
 	StopLoopDisplay() error
 }
@@ -65,7 +67,12 @@ func callDisplayElement(idx int, kd keyDefinition) error {
 		inst = reflect.New(t).Interface()
 	}
 
-	if t.Implements(reflect.TypeOf((*refreshingDisplayElement)(nil)).Elem()) {
+	if t.Implements(reflect.TypeOf((*refreshingDisplayElement)(nil)).Elem()) &&
+		inst.(refreshingDisplayElement).NeedsLoop(kd.Display.Attributes) {
+		log.WithFields(log.Fields{
+			"key":          idx,
+			"display_type": kd.Display.Type,
+		}).Debug("Starting loop")
 		activeLoops = append(activeLoops, inst.(refreshingDisplayElement))
 		return inst.(refreshingDisplayElement).StartLoopDisplay(idx, kd.Display.Attributes)
 	}
