@@ -11,9 +11,9 @@ type page struct {
 }
 
 type keyDefinition struct {
-	Display dynamicElement `yaml:"display"`
-	Action  dynamicElement `yaml:"action"`
-	On      string         `yaml:"on"`
+	Display dynamicElement   `yaml:"display"`
+	Actions []dynamicElement `yaml:"actions"`
+	On      string           `yaml:"on"`
 }
 
 type dynamicElement struct {

@@ -125,8 +125,10 @@ func togglePage(page string) error {
 }
 
 func triggerAction(kd keyDefinition) error {
-	if kd.Action.Type != "" {
-		return callAction(kd)
+	for _, a := range kd.Actions {
+		if a.Type != "" {
+			return callAction(a)
+		}
 	}
 
 	return nil

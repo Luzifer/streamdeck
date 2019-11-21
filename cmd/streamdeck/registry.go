@@ -36,15 +36,15 @@ func registerDisplayElement(name string, handler displayElement) {
 	registeredDisplayElements[name] = reflect.TypeOf(handler)
 }
 
-func callAction(kd keyDefinition) error {
-	t, ok := registeredActions[kd.Action.Type]
+func callAction(a dynamicElement) error {
+	t, ok := registeredActions[a.Type]
 	if !ok {
-		return errors.Errorf("Unknown action type %q", kd.Action.Type)
+		return errors.Errorf("Unknown action type %q", a.Type)
 	}
 
 	inst := reflect.New(t).Interface().(action)
 
-	return inst.Execute(kd.Action.Attributes)
+	return inst.Execute(a.Attributes)
 }
 
 func callDisplayElement(idx int, kd keyDefinition) error {
