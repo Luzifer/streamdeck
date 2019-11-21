@@ -7,6 +7,7 @@ import (
 	"github.com/Luzifer/rconfig/v2"
 	"github.com/Luzifer/streamdeck"
 	"github.com/pkg/errors"
+	"github.com/sashko/go-uinput"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -24,6 +25,8 @@ var (
 	activePage page
 
 	sd *streamdeck.Client
+
+	kbd uinput.Keyboard
 
 	version = "dev"
 )
@@ -57,6 +60,13 @@ func main() {
 	}
 
 	userConfFile.Close()
+
+	// Initalize control devices
+	kbd, err = uinput.CreateKeyboard()
+	if err != nil {
+		log.WithError(err).Fatal("Unable to create uinput keyboard")
+	}
+	defer kbd.Close()
 
 	// Initialize device
 	sd, err = streamdeck.New(streamdeck.StreamDeckOriginalV2)
