@@ -126,7 +126,7 @@ func togglePage(page string) error {
 
 func triggerAction(kd keyDefinition) error {
 	if kd.Action.Type != "" {
-		return errors.Wrap(callAction(kd), "Unable to execute action")
+		return callAction(kd)
 	}
 
 	return nil
