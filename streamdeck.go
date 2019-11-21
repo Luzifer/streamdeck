@@ -84,6 +84,9 @@ func (c Client) ClearKey(keyIdx int) error { return c.cfg.ClearKey(keyIdx) }
 // ClearAllKeys fills all keys with solid black
 func (c Client) ClearAllKeys() error { return c.cfg.ClearAllKeys() }
 
+// IconSize returns the required icon size for the StreamDeck
+func (c Client) IconSize() int { return c.cfg.IconSize() }
+
 // SetBrightness sets the brightness of the keys (0-100)
 func (c Client) SetBrightness(pct int) error { return c.cfg.SetBrightness(pct) }
 
