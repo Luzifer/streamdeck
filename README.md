@@ -14,4 +14,5 @@
 
 ## Usage
 
-Project is currently not as stable as I'd recommend you to use it. If you want to use it though you can compile the `cmd/streamdeck` and play around with it. Proper documentation for supported display modules and actions will follow.
+- For library usage see [godoc](https://godoc.org/github.com/Luzifer/streamdeck)
+- For usage of the tool see the [Wiki](https://github.com/Luzifer/streamdeck/wiki)
