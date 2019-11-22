@@ -135,6 +135,10 @@ func (d displayElementExec) Display(idx int, attributes map[string]interface{}) 
 		}
 	}
 
+	if !d.running && d.NeedsLoop(attributes) {
+		return nil
+	}
+
 	return errors.Wrap(sd.FillImage(idx, img), "Unable to set image")
 }
 
