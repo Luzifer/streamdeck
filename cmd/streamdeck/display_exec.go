@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"image"
 	"image/color"
 	"image/draw"
@@ -38,6 +39,7 @@ func (d displayElementExec) Display(idx int, attributes map[string]interface{}) 
 	// Initialize black image
 	draw.Draw(img, img.Bounds(), image.NewUniform(color.RGBA{0x0, 0x0, 0x0, 0xff}), image.ZP, draw.Src)
 
+	// Initialize command
 	cmd, ok := attributes["command"].([]interface{})
 	if !ok {
 		return errors.New("No command supplied")
@@ -52,34 +54,7 @@ func (d displayElementExec) Display(idx int, attributes map[string]interface{}) 
 		return errors.New("Command conatins non-string argument")
 	}
 
-	if filename, ok := attributes["image"].(string); ok {
-		bgi, err := d.getImageFromDisk(filename)
-		if err != nil {
-			return errors.Wrap(err, "Unable to get image from disk")
-		}
-
-		draw.Draw(img, img.Bounds(), bgi, image.ZP, draw.Src)
-	}
-
-	var textColor color.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
-	if rgba, ok := attributes["color"].([]interface{}); ok {
-		if len(rgba) != 4 {
-			return errors.New("RGBA color definition needs 4 hex values")
-		}
-
-		textColor = color.RGBA{uint8(rgba[0].(int)), uint8(rgba[1].(int)), uint8(rgba[2].(int)), uint8(rgba[3].(int))}
-	}
-
-	var fontsize float64 = 120
-	if v, ok := attributes["font_size"].(float64); ok {
-		fontsize = v
-	}
-
-	var border = 10
-	if v, ok := attributes["border"].(int); ok {
-		border = v
-	}
-
+	// Execute command and parse it
 	var buf = new(bytes.Buffer)
 
 	command := exec.Command(args[0], args[1:]...)
@@ -90,6 +65,58 @@ func (d displayElementExec) Display(idx int, attributes map[string]interface{}) 
 		return errors.Wrap(err, "Command has exit != 0")
 	}
 
+	attributes["text"] = strings.TrimSpace(buf.String())
+
+	tmpAttrs := map[string]interface{}{}
+	if err = json.Unmarshal(buf.Bytes(), &tmpAttrs); err == nil {
+		for k, v := range tmpAttrs {
+			attributes[k] = v
+		}
+	}
+
+	// Initialize background
+	if filename, ok := attributes["image"].(string); ok {
+		bgi, err := d.getImageFromDisk(filename)
+		if err != nil {
+			return errors.Wrap(err, "Unable to get image from disk")
+		}
+
+		draw.Draw(img, img.Bounds(), bgi, image.ZP, draw.Src)
+	}
+
+	// Initialize color
+	var textColor color.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
+	if rgba, ok := attributes["color"].([]interface{}); ok {
+		if len(rgba) != 4 {
+			return errors.New("RGBA color definition needs 4 hex values")
+		}
+
+		tmpCol := color.RGBA{}
+
+		for idx, vp := range []*uint8{&tmpCol.R, &tmpCol.G, &tmpCol.B, &tmpCol.A} {
+			switch rgba[idx].(type) {
+			case int:
+				*vp = uint8(rgba[idx].(int))
+			case float64:
+				*vp = uint8(rgba[idx].(float64))
+			}
+		}
+
+		textColor = tmpCol
+	}
+
+	// Initialize fontsize
+	var fontsize float64 = 120
+	if v, ok := attributes["font_size"].(float64); ok {
+		fontsize = v
+	}
+
+	var border = 10
+	if v, ok := attributes["border"].(int); ok {
+		border = v
+	}
+
+	// Render text
 	f, err := d.loadFont()
 	if err != nil {
 		return errors.Wrap(err, "Unable to load font")
@@ -102,8 +129,8 @@ func (d displayElementExec) Display(idx int, attributes map[string]interface{}) 
 	c.SetFont(f)
 	c.SetHinting(font.HintingNone)
 
-	if strings.TrimSpace(buf.String()) != "" {
-		if err = d.drawText(c, strings.TrimSpace(buf.String()), textColor, fontsize, border); err != nil {
+	if strings.TrimSpace(attributes["text"].(string)) != "" {
+		if err = d.drawText(c, strings.TrimSpace(attributes["text"].(string)), textColor, fontsize, border); err != nil {
 			return errors.Wrap(err, "Unable to render text")
 		}
 	}
