@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 
 	"github.com/Luzifer/rconfig/v2"
@@ -16,7 +17,7 @@ import (
 
 var (
 	cfg = struct {
-		Config         string `flag:"config,c" default:"config.yml" description:"Configuration with page / key definitions"`
+		Config         string `flag:"config,c" vardefault:"config" description:"Configuration with page / key definitions"`
 		LogLevel       string `flag:"log-level" default:"info" description:"Log level (debug, info, warn, error, fatal)"`
 		VersionAndExit bool   `flag:"version" default:"false" description:"Prints current version and exits"`
 	}{}
@@ -35,6 +36,11 @@ var (
 )
 
 func init() {
+	cfgDir, _ := os.UserConfigDir()
+	rconfig.SetVariableDefaults(map[string]string{
+		"config": path.Join(cfgDir, "streamdeck.yaml"),
+	})
+
 	if err := rconfig.ParseAndValidate(&cfg); err != nil {
 		log.Fatalf("Unable to parse commandline options: %s", err)
 	}
