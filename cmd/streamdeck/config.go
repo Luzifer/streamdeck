@@ -1,8 +1,11 @@
 package main
 
+import "time"
+
 type config struct {
 	DefaultBrightness int             `yaml:"default_brightness"`
 	DefaultPage       string          `yaml:"default_page"`
+	DisplayOffTime    time.Duration   `yaml:"display_off_time"`
 	Pages             map[string]page `yaml:"pages"`
 	RenderFont        string          `yaml:"render_font"`
 }

@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"path"
 	"syscall"
+	"time"
 
 	"github.com/Luzifer/rconfig/v2"
 	"github.com/Luzifer/streamdeck"
@@ -69,6 +70,8 @@ func loadConfig() error {
 		return errors.Wrap(err, "Unable to parse config")
 	}
 
+	applySystemPages(&tempConf)
+
 	userConfig = tempConf
 
 	return nil
@@ -76,11 +79,6 @@ func loadConfig() error {
 
 func main() {
 	var err error
-
-	// Load config
-	if err = loadConfig(); err != nil {
-		log.WithError(err).Fatal("Unable to load config")
-	}
 
 	// Initalize control devices
 	kbd, err = uinput.CreateKeyboard()
@@ -111,6 +109,11 @@ func main() {
 		"serial":   serial,
 	}).Info("Found StreamDeck")
 
+	// Load config
+	if err = loadConfig(); err != nil {
+		log.WithError(err).Fatal("Unable to load config")
+	}
+
 	// Initial setup
 
 	sigs := make(chan os.Signal)
@@ -127,9 +130,18 @@ func main() {
 		log.WithError(err).Error("Unable to load default page")
 	}
 
+	var offTimer *time.Timer = &time.Timer{}
+	if userConfig.DisplayOffTime > 0 {
+		offTimer = time.NewTimer(userConfig.DisplayOffTime)
+	}
+
 	for {
 		select {
 		case evt := <-sd.Subscribe():
+			if userConfig.DisplayOffTime > 0 {
+				offTimer.Reset(userConfig.DisplayOffTime)
+			}
+
 			if evt.Key >= len(activePage.Keys) {
 				continue
 			}
@@ -139,6 +151,11 @@ func main() {
 				if err := triggerAction(kd); err != nil {
 					log.WithError(err).Error("Unable to execute action")
 				}
+			}
+
+		case <-offTimer.C:
+			if err := togglePage("@@blank"); err != nil {
+				log.WithError(err).Error("Unable to toggle to blank page")
 			}
 
 		case <-sigs:
