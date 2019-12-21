@@ -7,6 +7,7 @@ replace github.com/Luzifer/streamdeck => ../../
 require (
 	github.com/Luzifer/rconfig/v2 v2.2.1
 	github.com/Luzifer/streamdeck v0.0.0-20191122003228-a2f524a6b22c
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/pkg/errors v0.8.1

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Luzifer/rconfig/v2"
 	"github.com/Luzifer/streamdeck"
+	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
 	"github.com/sashko/go-uinput"
 	log "github.com/sirupsen/logrus"
@@ -25,9 +26,10 @@ var (
 
 	currentBrightness int
 
-	userConfig  config
-	activePage  page
-	activeLoops []refreshingDisplayElement
+	userConfig     config
+	activePage     page
+	activePageName string
+	activeLoops    []refreshingDisplayElement
 
 	sd *streamdeck.Client
 
@@ -135,6 +137,17 @@ func main() {
 		offTimer = time.NewTimer(userConfig.DisplayOffTime)
 	}
 
+	fswatch, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.WithError(err).Fatal("Unable to create file watcher")
+	}
+
+	if userConfig.AutoReload {
+		if err = fswatch.Add(cfg.Config); err != nil {
+			log.WithError(err).Error("Unable to watch config, auto-reload will not work")
+		}
+	}
+
 	for {
 		select {
 		case evt := <-sd.Subscribe():
@@ -158,6 +171,26 @@ func main() {
 				log.WithError(err).Error("Unable to toggle to blank page")
 			}
 
+		case evt := <-fswatch.Events:
+			if evt.Op&fsnotify.Write == fsnotify.Write {
+				log.Info("Detected change of config, reloading")
+
+				if err := loadConfig(); err != nil {
+					log.WithError(err).Error("Unable to reload config")
+					continue
+				}
+
+				var nextPage = userConfig.DefaultPage
+				if _, ok := userConfig.Pages[activePageName]; ok {
+					nextPage = activePageName
+				}
+
+				if err := togglePage(nextPage); err != nil {
+					log.WithError(err).Error("Unable to reload page")
+					continue
+				}
+			}
+
 		case <-sigs:
 			return
 
@@ -175,6 +208,7 @@ func togglePage(page string) error {
 	activeLoops = nil
 
 	activePage = userConfig.Pages[page]
+	activePageName = page
 	sd.ClearAllKeys()
 
 	for idx, kd := range activePage.Keys {

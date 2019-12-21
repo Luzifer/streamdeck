@@ -3,6 +3,7 @@ package main
 import "time"
 
 type config struct {
+	AutoReload        bool            `yaml:"auto_reload"`
 	DefaultBrightness int             `yaml:"default_brightness"`
 	DefaultPage       string          `yaml:"default_page"`
 	DisplayOffTime    time.Duration   `yaml:"display_off_time"`
@@ -23,4 +24,10 @@ type keyDefinition struct {
 type dynamicElement struct {
 	Type       string                 `yaml:"type"`
 	Attributes map[string]interface{} `yaml:"attributes"`
+}
+
+func newConfig() config {
+	return config{
+		AutoReload: true,
+	}
 }
