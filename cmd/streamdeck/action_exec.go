@@ -35,5 +35,11 @@ func (actionExec) Execute(attributes map[string]interface{}) error {
 		return errors.Wrap(err, "Unable to start command")
 	}
 
+	// If "wait" is set and set to true start command and wait for execution
+	if v, ok := attributes["wait"].(bool); ok && v {
+		return errors.Wrap(command.Wait(), "Unable to execute command")
+	}
+
+	// We don't wait so we release the process and don't care anymore
 	return errors.Wrap(command.Process.Release(), "Unable to release process")
 }
