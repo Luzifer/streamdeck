@@ -167,11 +167,11 @@ func main() {
 				offTimer.Reset(userConfig.DisplayOffTime)
 			}
 
-			if evt.Key >= len(activePage.Keys) {
+			kd, ok := activePage.Keys[evt.Key]
+			if !ok {
 				continue
 			}
 
-			kd := activePage.Keys[evt.Key]
 			if kd.On == "down" && evt.Type == streamdeck.EventTypeDown || (kd.On == "up" || kd.On == "") && evt.Type == streamdeck.EventTypeUp || kd.On == "both" {
 				if err := triggerAction(kd); err != nil {
 					log.WithError(err).Error("Unable to execute action")
