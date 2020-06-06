@@ -15,5 +15,5 @@
 
 ## Usage
 
-- For library usage see [godoc](https://godoc.org/github.com/Luzifer/streamdeck)
+- For library usage see [godoc](https://pkg.go.dev/github.com/Luzifer/streamdeck?tab=doc)
 - For usage of the tool see the [Wiki](https://github.com/Luzifer/streamdeck/wiki)
