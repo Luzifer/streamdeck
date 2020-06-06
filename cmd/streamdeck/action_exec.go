@@ -31,9 +31,18 @@ func (actionExec) Execute(attributes map[string]interface{}) error {
 
 	processEnv := env.ListToMap(os.Environ())
 
-	if e, ok := attributes["env"].(map[string]string); ok {
+	if e, ok := attributes["env"].(map[interface{}]interface{}); ok {
 		for k, v := range e {
-			processEnv[k] = v
+			key, ok := k.(string)
+			if !ok {
+				continue
+			}
+			value, ok := v.(string)
+			if !ok {
+				continue
+			}
+
+			processEnv[key] = value
 		}
 	}
 

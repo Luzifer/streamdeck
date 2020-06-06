@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Luzifer/go_helpers/v2/env"
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	"github.com/pkg/errors"
@@ -58,8 +59,25 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 	// Execute command and parse it
 	var buf = new(bytes.Buffer)
 
+	processEnv := env.ListToMap(os.Environ())
+
+	if e, ok := attributes["env"].(map[interface{}]interface{}); ok {
+		for k, v := range e {
+			key, ok := k.(string)
+			if !ok {
+				continue
+			}
+			value, ok := v.(string)
+			if !ok {
+				continue
+			}
+
+			processEnv[key] = value
+		}
+	}
+
 	command := exec.Command(args[0], args[1:]...)
-	command.Env = os.Environ()
+	command.Env = env.MapToList(processEnv)
 	command.Stdout = buf
 
 	if err := command.Run(); err != nil {
