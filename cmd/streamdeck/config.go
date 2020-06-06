@@ -12,7 +12,7 @@ type config struct {
 }
 
 type page struct {
-	Keys []keyDefinition `yaml:"keys"`
+	Keys map[int]keyDefinition `yaml:"keys"`
 }
 
 type keyDefinition struct {
