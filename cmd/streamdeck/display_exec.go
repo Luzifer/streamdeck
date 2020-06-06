@@ -70,6 +70,9 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 
 	tmpAttrs := map[string]interface{}{}
 	if err = json.Unmarshal(buf.Bytes(), &tmpAttrs); err == nil {
+		// Reset text to empty as it was parsable json
+		attributes["text"] = ""
+
 		for k, v := range tmpAttrs {
 			attributes[k] = v
 		}
