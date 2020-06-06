@@ -32,5 +32,7 @@ func (d displayElementImage) Display(idx int, attributes map[string]interface{})
 		return errors.Wrap(err, "Umable to decode image")
 	}
 
+	img = autoSizeImage(img, sd.IconSize())
+
 	return errors.Wrap(sd.FillImage(idx, img), "Unable to set image")
 }

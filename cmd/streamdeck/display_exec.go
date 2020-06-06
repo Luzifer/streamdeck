@@ -81,6 +81,8 @@ func (d displayElementExec) Display(idx int, attributes map[string]interface{}) 
 			return errors.Wrap(err, "Unable to get image from disk")
 		}
 
+		bgi = autoSizeImage(bgi, sd.IconSize())
+
 		draw.Draw(img, img.Bounds(), bgi, image.ZP, draw.Src)
 	}
 
