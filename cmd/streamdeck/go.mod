@@ -15,6 +15,7 @@ require (
 	github.com/sashko/go-uinput v0.0.0-20180923134002-15fcac7aa54a
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/sstallion/go-hid v0.0.0-20190621001400-1cf4630be9f4
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
 	golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e // indirect
 	gopkg.in/validator.v2 v2.0.0-20191107172027-c3144fdedc21 // indirect

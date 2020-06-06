@@ -20,7 +20,9 @@ import (
 var (
 	cfg = struct {
 		Config         string `flag:"config,c" vardefault:"config" description:"Configuration with page / key definitions"`
+		List           bool   `flag:"list,l" default:"false" description:"List all available StreamDecks"`
 		LogLevel       string `flag:"log-level" default:"info" description:"Log level (debug, info, warn, error, fatal)"`
+		ProductID      string `flag:"product-id,p" default:"" description:"Specify StreamDeck to use (use list to find ID), default first found"`
 		VersionAndExit bool   `flag:"version" default:"false" description:"Prints current version and exits"`
 	}{}
 
@@ -80,7 +82,14 @@ func loadConfig() error {
 }
 
 func main() {
-	var err error
+	if cfg.List {
+		listAndQuit()
+	}
+
+	deck, err := selectDeckToUse()
+	if err != nil {
+		log.WithError(err).Fatal("Unable to select StreamDeck to use")
+	}
 
 	// Initalize control devices
 	kbd, err = uinput.CreateKeyboard()
@@ -90,7 +99,7 @@ func main() {
 	defer kbd.Close()
 
 	// Initialize device
-	sd, err = streamdeck.New(streamdeck.StreamDeckOriginalV2)
+	sd, err = streamdeck.New(deck)
 	if err != nil {
 		log.WithError(err).Fatal("Unable to open StreamDeck connection")
 	}

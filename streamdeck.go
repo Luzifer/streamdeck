@@ -8,12 +8,19 @@ import (
 	hid "github.com/sstallion/go-hid"
 )
 
-const vendorElgato = 0x0fd9
+const VendorElgato = 0x0fd9
 
 const (
 	// Streamdeck Original V2 (0fd9:006d) 15 keys
 	StreamDeckOriginalV2 uint16 = 0x006d
+	// Stremdeck XL (0fd9:006c) 32 keys
+	StreamDeckXL uint16 = 0x006c
 )
+
+var DeckToName = map[uint16]string{
+	StreamDeckOriginalV2: "StreamDeck Original V2",
+	StreamDeckXL:         "StreamDeck XL",
+}
 
 // EventType represents the state of a button (Up / Down)
 type EventType uint8
@@ -41,7 +48,7 @@ type Client struct {
 
 // New creates a new Client for the given device (see constants for supported types)
 func New(devicePID uint16) (*Client, error) {
-	dev, err := hid.OpenFirst(vendorElgato, devicePID)
+	dev, err := hid.OpenFirst(VendorElgato, devicePID)
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to open device")
 	}
