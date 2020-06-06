@@ -15,15 +15,24 @@ func init() {
 type actionKeyPress struct{}
 
 func (actionKeyPress) Execute(attributes map[string]interface{}) error {
-	keys, ok := attributes["keys"].([]interface{})
-	if !ok {
-		return errors.New("No keys array present")
-	}
-
 	var (
-		delay    time.Duration
-		keyCodes []uint16
+		delay     time.Duration
+		execCodes []uint16
+		ok        bool
+
+		keyNames    []interface{}
+		keyCodes    []interface{}
+		useKeyNames bool
 	)
+
+	keyCodes, ok = attributes["key_codes"].([]interface{})
+	if !ok {
+		keyNames, ok = attributes["keys"].([]interface{})
+		if !ok {
+			return errors.New("No key_codes or keys array present")
+		}
+		useKeyNames = true
+	}
 
 	if v, ok := attributes["delay"].(string); ok {
 		if d, err := time.ParseDuration(v); err == nil {
@@ -31,21 +40,27 @@ func (actionKeyPress) Execute(attributes map[string]interface{}) error {
 		}
 	}
 
-	for _, k := range keys {
-		// Convert misdetections into strings
-		switch k.(type) {
-		case int:
-			k = strconv.Itoa(k.(int))
-		}
-
-		if kv, ok := k.(string); ok {
-			if kc, ok := uinputKeyMapping[kv]; ok {
-				keyCodes = append(keyCodes, kc)
-			} else {
-				return errors.Errorf("Unknown key %q", kv)
+	if useKeyNames {
+		for _, k := range keyNames {
+			// Convert misdetections into strings
+			switch k.(type) {
+			case int:
+				k = strconv.Itoa(k.(int))
 			}
-		} else {
-			return errors.New("Unknown key type detected")
+
+			if kv, ok := k.(string); ok {
+				if kc, ok := uinputKeyMapping[kv]; ok {
+					execCodes = append(execCodes, kc)
+				} else {
+					return errors.Errorf("Unknown key %q", kv)
+				}
+			} else {
+				return errors.New("Unknown key type detected")
+			}
+		}
+	} else {
+		for _, k := range keyCodes {
+			execCodes = append(execCodes, uint16(k.(int)))
 		}
 	}
 
@@ -70,7 +85,7 @@ func (actionKeyPress) Execute(attributes map[string]interface{}) error {
 		defer kbd.KeyUp(uinput.KeyLeftCtrl)
 	}
 
-	for _, kc := range keyCodes {
+	for _, kc := range execCodes {
 		if err := kbd.KeyPress(kc); err != nil {
 			return errors.Wrap(err, "Unable to press key")
 		}
