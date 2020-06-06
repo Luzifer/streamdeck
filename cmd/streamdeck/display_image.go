@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"image"
 	_ "image/jpeg"
 	_ "image/png"
@@ -15,7 +16,7 @@ func init() {
 
 type displayElementImage struct{}
 
-func (d displayElementImage) Display(idx int, attributes map[string]interface{}) error {
+func (d displayElementImage) Display(ctx context.Context, idx int, attributes map[string]interface{}) error {
 	filename, ok := attributes["path"].(string)
 	if !ok {
 		return errors.New("No path attribute specified")
@@ -33,6 +34,11 @@ func (d displayElementImage) Display(idx int, attributes map[string]interface{})
 	}
 
 	img = autoSizeImage(img, sd.IconSize())
+
+	if err := ctx.Err(); err != nil {
+		// Page context was cancelled, do not draw
+		return err
+	}
 
 	return errors.Wrap(sd.FillImage(idx, img), "Unable to set image")
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"reflect"
 	"sync"
 
@@ -13,12 +14,12 @@ type action interface {
 }
 
 type displayElement interface {
-	Display(idx int, attributes map[string]interface{}) error
+	Display(ctx context.Context, idx int, attributes map[string]interface{}) error
 }
 
 type refreshingDisplayElement interface {
 	NeedsLoop(attributes map[string]interface{}) bool
-	StartLoopDisplay(idx int, attributes map[string]interface{}) error
+	StartLoopDisplay(ctx context.Context, idx int, attributes map[string]interface{}) error
 	StopLoopDisplay() error
 }
 
@@ -54,7 +55,7 @@ func callAction(a dynamicElement) error {
 	return inst.Execute(a.Attributes)
 }
 
-func callDisplayElement(idx int, kd keyDefinition) error {
+func callDisplayElement(ctx context.Context, idx int, kd keyDefinition) error {
 	t, ok := registeredDisplayElements[kd.Display.Type]
 	if !ok {
 		return errors.Errorf("Unknown display type %q", kd.Display.Type)
@@ -74,8 +75,8 @@ func callDisplayElement(idx int, kd keyDefinition) error {
 			"display_type": kd.Display.Type,
 		}).Debug("Starting loop")
 		activeLoops = append(activeLoops, inst.(refreshingDisplayElement))
-		return inst.(refreshingDisplayElement).StartLoopDisplay(idx, kd.Display.Attributes)
+		return inst.(refreshingDisplayElement).StartLoopDisplay(ctx, idx, kd.Display.Attributes)
 	}
 
-	return inst.(displayElement).Display(idx, kd.Display.Attributes)
+	return inst.(displayElement).Display(ctx, idx, kd.Display.Attributes)
 }

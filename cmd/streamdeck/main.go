@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -28,10 +29,12 @@ var (
 
 	currentBrightness int
 
-	userConfig     config
-	activePage     page
-	activePageName string
-	activeLoops    []refreshingDisplayElement
+	userConfig          config
+	activePage          page
+	activePageCtx       context.Context
+	activePageCtxCancel context.CancelFunc
+	activePageName      string
+	activeLoops         []refreshingDisplayElement
 
 	sd *streamdeck.Client
 
@@ -208,6 +211,11 @@ func main() {
 }
 
 func togglePage(page string) error {
+	if activePageCtxCancel != nil {
+		// Ensure old display events are no longer executed
+		activePageCtxCancel()
+	}
+
 	// Reset potentially running looped elements
 	for _, l := range activeLoops {
 		if err := l.StopLoopDisplay(); err != nil {
@@ -218,11 +226,12 @@ func togglePage(page string) error {
 
 	activePage = userConfig.Pages[page]
 	activePageName = page
+	activePageCtx, activePageCtxCancel = context.WithCancel(context.Background())
 	sd.ClearAllKeys()
 
 	for idx, kd := range activePage.Keys {
 		if kd.Display.Type != "" {
-			if err := callDisplayElement(idx, kd); err != nil {
+			if err := callDisplayElement(activePageCtx, idx, kd); err != nil {
 				return errors.Wrapf(err, "Unable to execute display element on key %d", idx)
 			}
 		}

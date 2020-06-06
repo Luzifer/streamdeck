@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"image"
 	"image/color"
@@ -30,7 +31,7 @@ type displayElementExec struct {
 	running bool
 }
 
-func (d displayElementExec) Display(idx int, attributes map[string]interface{}) error {
+func (d displayElementExec) Display(ctx context.Context, idx int, attributes map[string]interface{}) error {
 	var (
 		err error
 		img draw.Image = image.NewRGBA(image.Rect(0, 0, sd.IconSize(), sd.IconSize()))
@@ -141,6 +142,11 @@ func (d displayElementExec) Display(idx int, attributes map[string]interface{}) 
 		return nil
 	}
 
+	if err := ctx.Err(); err != nil {
+		// Page context was cancelled, do not draw
+		return err
+	}
+
 	return errors.Wrap(sd.FillImage(idx, img), "Unable to set image")
 }
 
@@ -152,7 +158,7 @@ func (d displayElementExec) NeedsLoop(attributes map[string]interface{}) bool {
 	return false
 }
 
-func (d *displayElementExec) StartLoopDisplay(idx int, attributes map[string]interface{}) error {
+func (d *displayElementExec) StartLoopDisplay(ctx context.Context, idx int, attributes map[string]interface{}) error {
 	d.running = true
 
 	var interval = 5 * time.Second
@@ -166,7 +172,7 @@ func (d *displayElementExec) StartLoopDisplay(idx int, attributes map[string]int
 				return
 			}
 
-			if err := d.Display(idx, attributes); err != nil {
+			if err := d.Display(ctx, idx, attributes); err != nil {
 				log.WithError(err).Error("Unable to refresh element")
 			}
 		}

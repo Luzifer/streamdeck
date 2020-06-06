@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"image/color"
 
 	"github.com/pkg/errors"
@@ -12,7 +13,7 @@ func init() {
 
 type displayElementColor struct{}
 
-func (d displayElementColor) Display(idx int, attributes map[string]interface{}) error {
+func (d displayElementColor) Display(ctx context.Context, idx int, attributes map[string]interface{}) error {
 	if name, ok := attributes["color"].(string); ok {
 		return d.displayPredefinedColor(idx, name)
 	}
@@ -20,6 +21,11 @@ func (d displayElementColor) Display(idx int, attributes map[string]interface{})
 	if rgba, ok := attributes["rgba"].([]interface{}); ok {
 		if len(rgba) != 4 {
 			return errors.New("RGBA color definition needs 4 hex values")
+		}
+
+		if err := ctx.Err(); err != nil {
+			// Page context was cancelled, do not draw
+			return err
 		}
 
 		return sd.FillColor(idx, color.RGBA{uint8(rgba[0].(int)), uint8(rgba[1].(int)), uint8(rgba[2].(int)), uint8(rgba[3].(int))})
