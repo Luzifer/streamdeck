@@ -210,19 +210,23 @@ func (d *displayElementExec) StopLoopDisplay() error {
 func (displayElementExec) drawText(c *freetype.Context, text string, textColor color.Color, fontsize float64, border int) error {
 	c.SetSrc(image.NewUniform(color.RGBA{0x0, 0x0, 0x0, 0x0})) // Transparent for text size guessing
 
-	var (
-		err error
-		ext fixed.Point26_6
-	)
+	textLines := strings.Split(text, "\n")
+
 	for {
 		c.SetFontSize(fontsize)
 
-		ext, err = c.DrawString(text, freetype.Pt(0, 0))
-		if err != nil {
-			return errors.Wrap(err, "Unable to measure text")
+		var maxX fixed.Int26_6
+		for _, tl := range textLines {
+			ext, err := c.DrawString(tl, freetype.Pt(0, 0))
+			if err != nil {
+				return errors.Wrap(err, "Unable to measure text")
+			}
+			if ext.X > maxX {
+				maxX = ext.X
+			}
 		}
 
-		if int(float64(ext.X)/64) > sd.IconSize()-2*border || int(c.PointToFixed(fontsize/2.0)/64) > sd.IconSize()-2*border {
+		if int(float64(maxX)/64) > sd.IconSize()-2*border || (int(c.PointToFixed(fontsize)/64))*len(textLines)+(len(textLines)-1)*2 > sd.IconSize()-2*border {
 			fontsize -= 2
 			continue
 		}
@@ -230,14 +234,31 @@ func (displayElementExec) drawText(c *freetype.Context, text string, textColor c
 		break
 	}
 
-	c.SetSrc(image.NewUniform(textColor))
+	var (
+		yTotal   = (int(c.PointToFixed(fontsize)/64))*len(textLines) + len(textLines)*2
+		yLineTop = int(float64(sd.IconSize())/2.0 - float64(yTotal)/2.0)
+	)
 
-	xcenter := (float64(sd.IconSize()-2*border) / 2.0) - (float64(int(float64(ext.X)/64)) / 2.0) + float64(border)
-	ycenter := (float64(sd.IconSize()-2*border) / 2.0) + (float64(c.PointToFixed(fontsize/2.0)/64) / 2.0) + float64(border)
+	for _, tl := range textLines {
+		c.SetSrc(image.NewUniform(color.RGBA{0x0, 0x0, 0x0, 0x0})) // Transparent for text size guessing
+		ext, err := c.DrawString(tl, freetype.Pt(0, 0))
+		if err != nil {
+			return errors.Wrap(err, "Unable to measure text")
+		}
 
-	_, err = c.DrawString(text, freetype.Pt(int(xcenter), int(ycenter)))
+		c.SetSrc(image.NewUniform(textColor))
 
-	return err
+		xcenter := (float64(sd.IconSize()-2*border) / 2.0) - (float64(int(float64(ext.X)/64)) / 2.0) + float64(border)
+		ylower := yLineTop + int(c.PointToFixed(fontsize)/64)
+
+		if _, err = c.DrawString(tl, freetype.Pt(int(xcenter), int(ylower))); err != nil {
+			return errors.Wrap(err, "Unable to draw text")
+		}
+
+		yLineTop += int(c.PointToFixed(fontsize)/64) + 2
+	}
+
+	return nil
 }
 
 func (displayElementExec) getImageFromDisk(filename string) (image.Image, error) {
