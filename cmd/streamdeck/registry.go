@@ -9,6 +9,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const errorDisplayElementType = "color"
+
+var errorDisplayElementAttributes = map[string]interface{}{
+	"rgba": []interface{}{0xff, 0x0, 0x0, 0xff},
+}
+
 type action interface {
 	Execute(attributes map[string]interface{}) error
 }
@@ -79,4 +85,20 @@ func callDisplayElement(ctx context.Context, idx int, kd keyDefinition) error {
 	}
 
 	return inst.(displayElement).Display(ctx, idx, kd.Display.Attributes)
+}
+
+func callErrorDisplayElement(ctx context.Context, idx int) error {
+	t, ok := registeredDisplayElements[errorDisplayElementType]
+	if !ok {
+		return errors.Errorf("Unknown display type %q", errorDisplayElementType)
+	}
+
+	var inst interface{}
+	if t.Kind() == reflect.Ptr {
+		inst = reflect.New(t.Elem()).Interface()
+	} else {
+		inst = reflect.New(t).Interface()
+	}
+
+	return inst.(displayElement).Display(ctx, idx, errorDisplayElementAttributes)
 }

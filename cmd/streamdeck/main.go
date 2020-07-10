@@ -235,12 +235,20 @@ func togglePage(page string) error {
 		}
 
 		go func(idx int) {
-			var kd = activePage.Keys[idx]
-			if err := callDisplayElement(activePageCtx, idx, kd); err != nil {
-				log.WithFields(log.Fields{
+			var (
+				kd        = activePage.Keys[idx]
+				keyLogger = log.WithFields(log.Fields{
 					"key":  idx,
 					"page": activePageName,
-				}).WithError(err).Error("Unable to execute display element")
+				})
+			)
+
+			if err := callDisplayElement(activePageCtx, idx, kd); err != nil {
+				keyLogger.WithError(err).Error("Unable to execute display element")
+
+				if err := callErrorDisplayElement(activePageCtx, idx); err != nil {
+					keyLogger.WithError(err).Error("Unable to execute error display element")
+				}
 			}
 		}(idx)
 	}
