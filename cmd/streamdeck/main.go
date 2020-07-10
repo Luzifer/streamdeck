@@ -229,12 +229,20 @@ func togglePage(page string) error {
 	activePageCtx, activePageCtxCancel = context.WithCancel(context.Background())
 	sd.ClearAllKeys()
 
-	for idx, kd := range activePage.Keys {
-		if kd.Display.Type != "" {
-			if err := callDisplayElement(activePageCtx, idx, kd); err != nil {
-				return errors.Wrapf(err, "Unable to execute display element on key %d", idx)
-			}
+	for idx := range activePage.Keys {
+		if activePage.Keys[idx].Display.Type == "" {
+			continue
 		}
+
+		go func(idx int) {
+			var kd = activePage.Keys[idx]
+			if err := callDisplayElement(activePageCtx, idx, kd); err != nil {
+				log.WithFields(log.Fields{
+					"key":  idx,
+					"page": activePageName,
+				}).WithError(err).Error("Unable to execute display element")
+			}
+		}(idx)
 	}
 
 	return nil
