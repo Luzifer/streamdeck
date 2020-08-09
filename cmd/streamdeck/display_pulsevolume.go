@@ -43,13 +43,13 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 	switch devType {
 
 	case "input":
-		volume, mute, err = pulseClient.GetSinkInputVolume(match)
+		volume, mute, _, _, err = pulseClient.GetSinkInputVolume(match)
 
 	case "sink":
-		volume, mute, err = pulseClient.GetSinkVolume(match)
+		volume, mute, _, _, err = pulseClient.GetSinkVolume(match)
 
 	case "source":
-		volume, mute, err = pulseClient.GetSourceVolume(match)
+		volume, mute, _, _, err = pulseClient.GetSourceVolume(match)
 
 	default:
 		return errors.Errorf("Unsupported device type: %q", devType)
