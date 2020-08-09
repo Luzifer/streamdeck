@@ -70,8 +70,13 @@ func (t *textOnImageRenderer) DrawBigText(text string, fontSizeHint float64, bor
 }
 
 func (t *textOnImageRenderer) DrawCaptionText(text string) error {
+	var fontFile = userConfig.CaptionFont
+	if fontFile == "" {
+		fontFile = userConfig.RenderFont
+	}
+
 	// Render text
-	f, err := t.loadFont(userConfig.CaptionFont)
+	f, err := t.loadFont(fontFile)
 	if err != nil {
 		return errors.Wrap(err, "Unable to load font")
 	}
