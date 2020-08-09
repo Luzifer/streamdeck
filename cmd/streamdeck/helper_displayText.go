@@ -91,7 +91,7 @@ func (t *textOnImageRenderer) drawText(c *freetype.Context, text string, textCol
 	}
 
 	var (
-		yTotal   = (int(c.PointToFixed(fontsize)/64))*len(textLines) + len(textLines)*2
+		yTotal   = (int(c.PointToFixed(fontsize)/64))*len(textLines) + (len(textLines)-1)*2
 		yLineTop = int(float64(sd.IconSize())/2.0 - float64(yTotal)/2.0)
 	)
 
