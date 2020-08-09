@@ -102,12 +102,12 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 
 		tmpCol := color.RGBA{}
 
-		for idx, vp := range []*uint8{&tmpCol.R, &tmpCol.G, &tmpCol.B, &tmpCol.A} {
-			switch rgba[idx].(type) {
+		for cidx, vp := range []*uint8{&tmpCol.R, &tmpCol.G, &tmpCol.B, &tmpCol.A} {
+			switch rgba[cidx].(type) {
 			case int:
-				*vp = uint8(rgba[idx].(int))
+				*vp = uint8(rgba[cidx].(int))
 			case float64:
-				*vp = uint8(rgba[idx].(float64))
+				*vp = uint8(rgba[cidx].(float64))
 			}
 		}
 
