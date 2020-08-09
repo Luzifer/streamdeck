@@ -81,7 +81,7 @@ func (d *deckConfigOriginalV2) FillImage(keyIdx int, img image.Image) error {
 		}
 
 		var last uint8
-		if n < deckOriginalV2MaxPacketSize-deckOriginalV2HeaderSize {
+		if n < deckOriginalV2MaxPacketSize-deckOriginalV2HeaderSize || buf.Len() == 0 {
 			last = 1
 		}
 
