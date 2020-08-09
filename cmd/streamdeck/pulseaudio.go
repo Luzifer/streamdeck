@@ -21,6 +21,8 @@ func init() {
 	}
 }
 
+var errPulseNoSuchDevice = errors.New("No such device")
+
 type pulseAudioClient struct {
 	client *pulse.Client
 }
@@ -36,42 +38,42 @@ func newPulseAudioClient() (*pulseAudioClient, error) {
 
 func (p pulseAudioClient) Close() { p.client.Close() }
 
-func (p pulseAudioClient) GetSinkInputVolume(match string) (float64, error) {
+func (p pulseAudioClient) GetSinkInputVolume(match string) (float64, bool, error) {
 	m, err := regexp.Compile(match)
 	if err != nil {
-		return 0, errors.Wrap(err, "Unable to compile given match RegEx")
+		return 0, false, errors.Wrap(err, "Unable to compile given match RegEx")
 	}
 
 	var resp proto.GetSinkInputInfoListReply
 	if err := p.client.RawRequest(&proto.GetSinkInputInfoList{}, &resp); err != nil {
-		return 0, errors.Wrap(err, "Unable to list sink inputs")
+		return 0, false, errors.Wrap(err, "Unable to list sink inputs")
 	}
 
 	for _, info := range resp {
-		if !m.MatchString(info.MediaName) && !m.Match(info.Properties["application.name"]) {
+		if !m.MatchString(info.MediaName) && !m.Match(info.Properties["application.name"]) || info.Corked {
 			continue
 		}
 
 		sinkBase, err := p.getSinkBaseVolumeByIndex(info.SinkIndex)
 		if err != nil {
-			return 0, errors.Wrap(err, "Unable to get sink base volume")
+			return 0, false, errors.Wrap(err, "Unable to get sink base volume")
 		}
 
-		return p.unifyChannelVolumes(info.ChannelVolumes) / sinkBase, nil
+		return p.unifyChannelVolumes(info.ChannelVolumes) / sinkBase, info.Muted, nil
 	}
 
-	return 0, errors.New("No such sink")
+	return 0, false, errPulseNoSuchDevice
 }
 
-func (p pulseAudioClient) GetSinkVolume(match string) (float64, error) {
+func (p pulseAudioClient) GetSinkVolume(match string) (float64, bool, error) {
 	m, err := regexp.Compile(match)
 	if err != nil {
-		return 0, errors.Wrap(err, "Unable to compile given match RegEx")
+		return 0, false, errors.Wrap(err, "Unable to compile given match RegEx")
 	}
 
 	var resp proto.GetSinkInfoListReply
 	if err := p.client.RawRequest(&proto.GetSinkInfoList{}, &resp); err != nil {
-		return 0, errors.Wrap(err, "Unable to list sinks")
+		return 0, false, errors.Wrap(err, "Unable to list sinks")
 	}
 
 	for _, info := range resp {
@@ -79,10 +81,10 @@ func (p pulseAudioClient) GetSinkVolume(match string) (float64, error) {
 			continue
 		}
 
-		return p.unifyChannelVolumes(info.ChannelVolumes) / float64(info.BaseVolume), nil
+		return p.unifyChannelVolumes(info.ChannelVolumes) / float64(info.BaseVolume), info.Mute, nil
 	}
 
-	return 0, errors.New("No such sink")
+	return 0, false, errPulseNoSuchDevice
 }
 
 func (p pulseAudioClient) getSinkBaseVolumeByIndex(idx uint32) (float64, error) {

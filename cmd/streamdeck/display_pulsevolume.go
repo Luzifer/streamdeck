@@ -30,8 +30,10 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 	sinkInputOK = sinkInputOK && sinkInputMatch != ""
 
 	var (
-		err    error
-		volume float64
+		err        error
+		mute       bool
+		notPresent bool
+		volume     float64
 	)
 
 	switch {
@@ -40,21 +42,35 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 		return errors.New("Exactly one of 'sink' and 'sink_input' must be specified")
 
 	case sinkInputOK:
-		volume, err = pulseClient.GetSinkInputVolume(sinkInputMatch)
+		volume, mute, err = pulseClient.GetSinkInputVolume(sinkInputMatch)
 
 	case sinkOK:
-		volume, err = pulseClient.GetSinkVolume(sinkMatch)
+		volume, mute, err = pulseClient.GetSinkVolume(sinkMatch)
 
 	}
 
-	if err != nil {
+	if err == errPulseNoSuchDevice {
+		notPresent = true
+	} else if err != nil {
 		return errors.Wrap(err, "Unable to get volume")
 	}
 
 	img := newTextOnImageRenderer()
 
+	var (
+		text                  = fmt.Sprintf("%.0f%%", volume*100)
+		textColor color.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
+	)
+
+	if notPresent {
+		text = "--"
+		textColor = color.RGBA{0xff, 0x0, 0x0, 0x0}
+	} else if mute {
+		text = "M"
+		textColor = color.RGBA{0xff, 0x0, 0x0, 0x0}
+	}
+
 	// Initialize color
-	var textColor color.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
 	if rgba, ok := attributes["color"].([]interface{}); ok {
 		if len(rgba) != 4 {
 			return errors.New("RGBA color definition needs 4 hex values")
@@ -85,7 +101,7 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 		border = v
 	}
 
-	if err = img.DrawBigText(fmt.Sprintf("%.0f%%", volume*100), fontsize, border, textColor); err != nil {
+	if err = img.DrawBigText(text, fontsize, border, textColor); err != nil {
 		return errors.Wrap(err, "Unable to draw text")
 	}
 
