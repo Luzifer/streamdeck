@@ -4,24 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"image"
 	"image/color"
-	"image/draw"
 	_ "image/jpeg"
 	_ "image/png"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/Luzifer/go_helpers/v2/env"
-	"github.com/golang/freetype"
-	"github.com/golang/freetype/truetype"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/image/font"
-	"golang.org/x/image/math/fixed"
 )
 
 func init() {
@@ -34,12 +27,9 @@ type displayElementExec struct {
 
 func (d displayElementExec) Display(ctx context.Context, idx int, attributes map[string]interface{}) error {
 	var (
-		err error
-		img draw.Image = image.NewRGBA(image.Rect(0, 0, sd.IconSize(), sd.IconSize()))
+		err         error
+		imgRenderer = newTextOnImageRenderer()
 	)
-
-	// Initialize black image
-	draw.Draw(img, img.Bounds(), image.NewUniform(color.RGBA{0x0, 0x0, 0x0, 0xff}), image.ZP, draw.Src)
 
 	// Initialize command
 	cmd, ok := attributes["command"].([]interface{})
@@ -98,14 +88,9 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 
 	// Initialize background
 	if filename, ok := attributes["image"].(string); ok {
-		bgi, err := d.getImageFromDisk(filename)
-		if err != nil {
-			return errors.Wrap(err, "Unable to get image from disk")
+		if err = imgRenderer.DrawBackgroundFromFile(filename); err != nil {
+			return errors.Wrap(err, "Unable to draw background from disk")
 		}
-
-		bgi = autoSizeImage(bgi, sd.IconSize())
-
-		draw.Draw(img, img.Bounds(), bgi, image.ZP, draw.Src)
 	}
 
 	// Initialize color
@@ -140,21 +125,8 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 		border = v
 	}
 
-	// Render text
-	f, err := d.loadFont()
-	if err != nil {
-		return errors.Wrap(err, "Unable to load font")
-	}
-
-	c := freetype.NewContext()
-	c.SetClip(img.Bounds())
-	c.SetDPI(72)
-	c.SetDst(img)
-	c.SetFont(f)
-	c.SetHinting(font.HintingNone)
-
 	if strings.TrimSpace(attributes["text"].(string)) != "" {
-		if err = d.drawText(c, strings.TrimSpace(attributes["text"].(string)), textColor, fontsize, border); err != nil {
+		if err = imgRenderer.DrawBigText(strings.TrimSpace(attributes["text"].(string)), fontsize, border, textColor); err != nil {
 			return errors.Wrap(err, "Unable to render text")
 		}
 	}
@@ -168,7 +140,7 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 		return err
 	}
 
-	return errors.Wrap(sd.FillImage(idx, img), "Unable to set image")
+	return errors.Wrap(sd.FillImage(idx, imgRenderer.GetImage()), "Unable to set image")
 }
 
 func (d displayElementExec) NeedsLoop(attributes map[string]interface{}) bool {
@@ -205,82 +177,4 @@ func (d *displayElementExec) StartLoopDisplay(ctx context.Context, idx int, attr
 func (d *displayElementExec) StopLoopDisplay() error {
 	d.running = false
 	return nil
-}
-
-func (displayElementExec) drawText(c *freetype.Context, text string, textColor color.Color, fontsize float64, border int) error {
-	c.SetSrc(image.NewUniform(color.RGBA{0x0, 0x0, 0x0, 0x0})) // Transparent for text size guessing
-
-	textLines := strings.Split(text, "\n")
-
-	for {
-		c.SetFontSize(fontsize)
-
-		var maxX fixed.Int26_6
-		for _, tl := range textLines {
-			ext, err := c.DrawString(tl, freetype.Pt(0, 0))
-			if err != nil {
-				return errors.Wrap(err, "Unable to measure text")
-			}
-			if ext.X > maxX {
-				maxX = ext.X
-			}
-		}
-
-		if int(float64(maxX)/64) > sd.IconSize()-2*border || (int(c.PointToFixed(fontsize)/64))*len(textLines)+(len(textLines)-1)*2 > sd.IconSize()-2*border {
-			fontsize -= 2
-			continue
-		}
-
-		break
-	}
-
-	var (
-		yTotal   = (int(c.PointToFixed(fontsize)/64))*len(textLines) + len(textLines)*2
-		yLineTop = int(float64(sd.IconSize())/2.0 - float64(yTotal)/2.0)
-	)
-
-	for _, tl := range textLines {
-		c.SetSrc(image.NewUniform(color.RGBA{0x0, 0x0, 0x0, 0x0})) // Transparent for text size guessing
-		ext, err := c.DrawString(tl, freetype.Pt(0, 0))
-		if err != nil {
-			return errors.Wrap(err, "Unable to measure text")
-		}
-
-		c.SetSrc(image.NewUniform(textColor))
-
-		xcenter := (float64(sd.IconSize()-2*border) / 2.0) - (float64(int(float64(ext.X)/64)) / 2.0) + float64(border)
-		ylower := yLineTop + int(c.PointToFixed(fontsize)/64)
-
-		if _, err = c.DrawString(tl, freetype.Pt(int(xcenter), int(ylower))); err != nil {
-			return errors.Wrap(err, "Unable to draw text")
-		}
-
-		yLineTop += int(c.PointToFixed(fontsize)/64) + 2
-	}
-
-	return nil
-}
-
-func (displayElementExec) getImageFromDisk(filename string) (image.Image, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, errors.Wrap(err, "Unable to open image")
-	}
-	defer f.Close()
-
-	img, _, err := image.Decode(f)
-	if err != nil {
-		return nil, errors.Wrap(err, "Umable to decode image")
-	}
-
-	return img, nil
-}
-
-func (displayElementExec) loadFont() (*truetype.Font, error) {
-	fontRaw, err := ioutil.ReadFile(userConfig.RenderFont)
-	if err != nil {
-		return nil, errors.Wrap(err, "Unable to read font file")
-	}
-
-	return truetype.Parse(fontRaw)
 }
