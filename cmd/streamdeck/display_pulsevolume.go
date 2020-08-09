@@ -23,11 +23,15 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 		return errors.New("PulseAudio client not initialized")
 	}
 
-	sinkMatch, sinkOK := attributes["sink"].(string)
-	sinkOK = sinkOK && sinkMatch != ""
+	devType, ok := attributes["device"].(string)
+	if !ok {
+		return errors.New("Missing 'device' attribute")
+	}
 
-	sinkInputMatch, sinkInputOK := attributes["sink_input"].(string)
-	sinkInputOK = sinkInputOK && sinkInputMatch != ""
+	match, ok := attributes["match"].(string)
+	if !ok {
+		return errors.New("Missing 'match' attribute")
+	}
 
 	var (
 		err        error
@@ -36,16 +40,19 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 		volume     float64
 	)
 
-	switch {
+	switch devType {
 
-	case (sinkInputOK && sinkOK) || (!sinkInputOK && !sinkOK):
-		return errors.New("Exactly one of 'sink' and 'sink_input' must be specified")
+	case "input":
+		volume, mute, err = pulseClient.GetSinkInputVolume(match)
 
-	case sinkInputOK:
-		volume, mute, err = pulseClient.GetSinkInputVolume(sinkInputMatch)
+	case "sink":
+		volume, mute, err = pulseClient.GetSinkVolume(match)
 
-	case sinkOK:
-		volume, mute, err = pulseClient.GetSinkVolume(sinkMatch)
+	case "source":
+		volume, mute, err = pulseClient.GetSourceVolume(match)
+
+	default:
+		return errors.Errorf("Unsupported device type: %q", devType)
 
 	}
 

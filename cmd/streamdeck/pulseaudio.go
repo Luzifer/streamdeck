@@ -54,7 +54,7 @@ func (p pulseAudioClient) GetSinkInputVolume(match string) (float64, bool, error
 			continue
 		}
 
-		sinkBase, err := p.getSinkBaseVolumeByIndex(info.SinkIndex)
+		sinkBase, err := p.getSinkReferenceVolumeByIndex(info.SinkIndex)
 		if err != nil {
 			return 0, false, errors.Wrap(err, "Unable to get sink base volume")
 		}
@@ -81,19 +81,41 @@ func (p pulseAudioClient) GetSinkVolume(match string) (float64, bool, error) {
 			continue
 		}
 
-		return p.unifyChannelVolumes(info.ChannelVolumes) / float64(info.BaseVolume), info.Mute, nil
+		return p.unifyChannelVolumes(info.ChannelVolumes) / float64(info.NumVolumeSteps), info.Mute, nil
 	}
 
 	return 0, false, errPulseNoSuchDevice
 }
 
-func (p pulseAudioClient) getSinkBaseVolumeByIndex(idx uint32) (float64, error) {
+func (p pulseAudioClient) GetSourceVolume(match string) (float64, bool, error) {
+	m, err := regexp.Compile(match)
+	if err != nil {
+		return 0, false, errors.Wrap(err, "Unable to compile given match RegEx")
+	}
+
+	var resp proto.GetSourceInfoListReply
+	if err := p.client.RawRequest(&proto.GetSourceInfoList{}, &resp); err != nil {
+		return 0, false, errors.Wrap(err, "Unable to list sources")
+	}
+
+	for _, info := range resp {
+		if !m.MatchString(info.SourceName) && !m.MatchString(info.Device) {
+			continue
+		}
+
+		return p.unifyChannelVolumes(info.ChannelVolumes) / float64(info.NumVolumeSteps), info.Mute, nil
+	}
+
+	return 0, false, errPulseNoSuchDevice
+}
+
+func (p pulseAudioClient) getSinkReferenceVolumeByIndex(idx uint32) (float64, error) {
 	var resp proto.GetSinkInfoReply
 	if err := p.client.RawRequest(&proto.GetSinkInfo{SinkIndex: idx}, &resp); err != nil {
 		return 0, errors.Wrap(err, "Unable to get sink")
 	}
 
-	return float64(resp.BaseVolume), nil
+	return float64(resp.NumVolumeSteps), nil
 }
 
 func (p pulseAudioClient) unifyChannelVolumes(v proto.ChannelVolumes) float64 {
