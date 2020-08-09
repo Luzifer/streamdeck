@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"image/color"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -110,6 +111,12 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 
 	if err = img.DrawBigText(text, fontsize, border, textColor); err != nil {
 		return errors.Wrap(err, "Unable to draw text")
+	}
+
+	if caption, ok := attributes["caption"].(string); ok && strings.TrimSpace(caption) != "" {
+		if err = img.DrawCaptionText(strings.TrimSpace(caption)); err != nil {
+			return errors.Wrap(err, "Unable to render caption")
+		}
 	}
 
 	if err = ctx.Err(); err != nil {

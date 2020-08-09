@@ -1,9 +1,16 @@
 package main
 
-import "time"
+import (
+	"time"
+)
 
 type config struct {
 	AutoReload        bool            `yaml:"auto_reload"`
+	CaptionBorder     int             `yaml:"caption_border"`
+	CaptionColor      [4]int          `yaml:"caption_color"`
+	CaptionFont       string          `yaml:"caption_font"`
+	CaptionFontSize   float64         `yaml:"caption_font_size"`
+	CaptionPosition   captionPosition `yaml:"caption_position"`
 	DefaultBrightness int             `yaml:"default_brightness"`
 	DefaultPage       string          `yaml:"default_page"`
 	DisplayOffTime    time.Duration   `yaml:"display_off_time"`
@@ -31,3 +38,10 @@ func newConfig() config {
 		AutoReload: true,
 	}
 }
+
+type captionPosition string
+
+const (
+	captionPositionBottom = "bottom"
+	captionPositionTop    = "top"
+)

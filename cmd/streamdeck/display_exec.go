@@ -131,6 +131,12 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 		}
 	}
 
+	if caption, ok := attributes["caption"].(string); ok && strings.TrimSpace(caption) != "" {
+		if err = imgRenderer.DrawCaptionText(strings.TrimSpace(caption)); err != nil {
+			return errors.Wrap(err, "Unable to render caption")
+		}
+	}
+
 	if !d.running && d.NeedsLoop(attributes) {
 		return nil
 	}
