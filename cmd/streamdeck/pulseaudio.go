@@ -38,15 +38,15 @@ func newPulseAudioClient() (*pulseAudioClient, error) {
 
 func (p pulseAudioClient) Close() { p.client.Close() }
 
-func (p pulseAudioClient) GetSinkInputVolume(match string) (vol float64, muted bool, idx uint32, max uint32, err error) {
+func (p pulseAudioClient) GetSinkInputVolume(match string) (vol float64, muted bool, idx []uint32, max uint32, err error) {
 	m, err := regexp.Compile(match)
 	if err != nil {
-		return 0, false, 0, 0, errors.Wrap(err, "Unable to compile given match RegEx")
+		return 0, false, nil, 0, errors.Wrap(err, "Unable to compile given match RegEx")
 	}
 
 	var resp proto.GetSinkInputInfoListReply
 	if err := p.client.RawRequest(&proto.GetSinkInputInfoList{}, &resp); err != nil {
-		return 0, false, 0, 0, errors.Wrap(err, "Unable to list sink inputs")
+		return 0, false, nil, 0, errors.Wrap(err, "Unable to list sink inputs")
 	}
 
 	for _, info := range resp {
@@ -56,13 +56,24 @@ func (p pulseAudioClient) GetSinkInputVolume(match string) (vol float64, muted b
 
 		sinkBase, err := p.getSinkReferenceVolumeByIndex(info.SinkIndex)
 		if err != nil {
-			return 0, false, 0, 0, errors.Wrap(err, "Unable to get sink base volume")
+			return 0, false, nil, 0, errors.Wrap(err, "Unable to get sink base volume")
 		}
 
-		return p.unifyChannelVolumes(info.ChannelVolumes) / float64(sinkBase), info.Muted, info.SinkInputIndex, sinkBase, nil
+		if max != 0 && sinkBase != max {
+			return 0, false, nil, 0, errors.New("found different sink bases")
+		}
+
+		idx = append(idx, info.SinkInputIndex)
+		max = sinkBase
+		muted = muted || info.Muted
+		vol = math.Max(vol, p.unifyChannelVolumes(info.ChannelVolumes)/float64(sinkBase))
 	}
 
-	return 0, false, 0, 0, errPulseNoSuchDevice
+	if len(idx) == 0 {
+		return 0, false, nil, 0, errPulseNoSuchDevice
+	}
+
+	return vol, muted, idx, max, nil
 }
 
 func (p pulseAudioClient) GetSinkVolume(match string) (vol float64, muted bool, idx uint32, max uint32, err error) {
@@ -110,26 +121,28 @@ func (p pulseAudioClient) GetSourceVolume(match string) (vol float64, muted bool
 }
 
 func (p pulseAudioClient) SetSinkInputVolume(match string, mute string, vol float64, absolute bool) error {
-	stateVol, stateMute, stateIdx, stateSteps, err := p.GetSinkInputVolume(match)
+	stateVol, stateMute, stateIdxs, stateSteps, err := p.GetSinkInputVolume(match)
 	if err != nil {
 		return errors.Wrap(err, "Unable to get current state of sink input")
 	}
 
 	var cmds []proto.RequestArgs
 
-	switch mute {
-	case "true":
-		cmds = append(cmds, &proto.SetSinkInputMute{SinkInputIndex: stateIdx, Mute: true})
-	case "false":
-		cmds = append(cmds, &proto.SetSinkInputMute{SinkInputIndex: stateIdx, Mute: false})
-	case "toggle":
-		cmds = append(cmds, &proto.SetSinkInputMute{SinkInputIndex: stateIdx, Mute: !stateMute})
-	}
+	for _, stateIdx := range stateIdxs {
+		switch mute {
+		case "true":
+			cmds = append(cmds, &proto.SetSinkInputMute{SinkInputIndex: stateIdx, Mute: true})
+		case "false":
+			cmds = append(cmds, &proto.SetSinkInputMute{SinkInputIndex: stateIdx, Mute: false})
+		case "toggle":
+			cmds = append(cmds, &proto.SetSinkInputMute{SinkInputIndex: stateIdx, Mute: !stateMute})
+		}
 
-	if absolute && vol >= 0 {
-		cmds = append(cmds, &proto.SetSinkInputVolume{SinkInputIndex: stateIdx, ChannelVolumes: proto.ChannelVolumes{uint32(vol * float64(stateSteps))}})
-	} else if vol != 0 {
-		cmds = append(cmds, &proto.SetSinkInputVolume{SinkInputIndex: stateIdx, ChannelVolumes: proto.ChannelVolumes{uint32(math.Max(0, stateVol+vol) * float64(stateSteps))}})
+		if absolute && vol >= 0 {
+			cmds = append(cmds, &proto.SetSinkInputVolume{SinkInputIndex: stateIdx, ChannelVolumes: proto.ChannelVolumes{uint32(vol * float64(stateSteps))}})
+		} else if vol != 0 {
+			cmds = append(cmds, &proto.SetSinkInputVolume{SinkInputIndex: stateIdx, ChannelVolumes: proto.ChannelVolumes{uint32(math.Max(0, stateVol+vol) * float64(stateSteps))}})
+		}
 	}
 
 	for _, cmd := range cmds {
@@ -223,7 +236,7 @@ func (p pulseAudioClient) unifyChannelVolumes(v proto.ChannelVolumes) float64 {
 		return float64(v[0])
 	}
 
-	var vMin = float64(v[0])
+	vMin := float64(v[0])
 	for i := 1; i < len(v); i++ {
 		vMin = math.Min(vMin, float64(v[i]))
 	}
