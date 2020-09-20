@@ -167,7 +167,7 @@ func main() {
 				offTimer.Reset(userConfig.DisplayOffTime)
 			}
 
-			kd, ok := activePage.Keys[evt.Key]
+			kd, ok := activePage.GetKeyDefinitions(userConfig)[evt.Key]
 			if !ok {
 				continue
 			}
@@ -192,7 +192,7 @@ func main() {
 					continue
 				}
 
-				var nextPage = userConfig.DefaultPage
+				nextPage := userConfig.DefaultPage
 				if _, ok := userConfig.Pages[activePageName]; ok {
 					nextPage = activePageName
 				}
@@ -229,19 +229,16 @@ func togglePage(page string) error {
 	activePageCtx, activePageCtxCancel = context.WithCancel(context.Background())
 	sd.ClearAllKeys()
 
-	for idx := range activePage.Keys {
-		if activePage.Keys[idx].Display.Type == "" {
+	for idx, kd := range activePage.GetKeyDefinitions(userConfig) {
+		if kd.Display.Type == "" {
 			continue
 		}
 
-		go func(idx int) {
-			var (
-				kd        = activePage.Keys[idx]
-				keyLogger = log.WithFields(log.Fields{
-					"key":  idx,
-					"page": activePageName,
-				})
-			)
+		go func(idx int, kd keyDefinition) {
+			keyLogger := log.WithFields(log.Fields{
+				"key":  idx,
+				"page": activePageName,
+			})
 
 			if err := callDisplayElement(activePageCtx, idx, kd); err != nil {
 				keyLogger.WithError(err).Error("Unable to execute display element")
@@ -250,7 +247,7 @@ func togglePage(page string) error {
 					keyLogger.WithError(err).Error("Unable to execute error display element")
 				}
 			}
-		}(idx)
+		}(idx, kd)
 	}
 
 	return nil

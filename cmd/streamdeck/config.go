@@ -19,7 +19,9 @@ type config struct {
 }
 
 type page struct {
-	Keys map[int]keyDefinition `yaml:"keys"`
+	Keys     map[int]keyDefinition `yaml:"keys"`
+	Overlay  string                `yaml:"overlay"`
+	Underlay string                `yaml:"underlay"`
 }
 
 type keyDefinition struct {
