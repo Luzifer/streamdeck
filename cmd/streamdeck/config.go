@@ -1,8 +1,14 @@
 package main
 
 import (
+	"os"
 	"time"
+
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
+
+const defaultLongPressDuration = 500 * time.Millisecond
 
 type config struct {
 	AutoReload        bool            `yaml:"auto_reload"`
@@ -14,6 +20,7 @@ type config struct {
 	DefaultBrightness int             `yaml:"default_brightness"`
 	DefaultPage       string          `yaml:"default_page"`
 	DisplayOffTime    time.Duration   `yaml:"display_off_time"`
+	LongPressDuration time.Duration   `yaml:"long_press_duration"`
 	Pages             map[string]page `yaml:"pages"`
 	RenderFont        string          `yaml:"render_font"`
 }
@@ -27,17 +34,18 @@ type page struct {
 type keyDefinition struct {
 	Display dynamicElement   `yaml:"display"`
 	Actions []dynamicElement `yaml:"actions"`
-	On      string           `yaml:"on"`
 }
 
 type dynamicElement struct {
 	Type       string                 `yaml:"type"`
+	LongPress  bool                   `yaml:"long_press"`
 	Attributes map[string]interface{} `yaml:"attributes"`
 }
 
 func newConfig() config {
 	return config{
-		AutoReload: true,
+		AutoReload:        true,
+		LongPressDuration: defaultLongPressDuration,
 	}
 }
 
@@ -47,3 +55,22 @@ const (
 	captionPositionBottom = "bottom"
 	captionPositionTop    = "top"
 )
+
+func loadConfig() error {
+	userConfFile, err := os.Open(cfg.Config)
+	if err != nil {
+		return errors.Wrap(err, "Unable to open config")
+	}
+	defer userConfFile.Close()
+
+	tempConf := newConfig()
+	if err = yaml.NewDecoder(userConfFile).Decode(&tempConf); err != nil {
+		return errors.Wrap(err, "Unable to parse config")
+	}
+
+	applySystemPages(&tempConf)
+
+	userConfig = tempConf
+
+	return nil
+}

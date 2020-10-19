@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sashko/go-uinput"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -63,25 +62,6 @@ func init() {
 	} else {
 		log.SetLevel(l)
 	}
-}
-
-func loadConfig() error {
-	userConfFile, err := os.Open(cfg.Config)
-	if err != nil {
-		return errors.Wrap(err, "Unable to open config")
-	}
-	defer userConfFile.Close()
-
-	var tempConf config
-	if err = yaml.NewDecoder(userConfFile).Decode(&tempConf); err != nil {
-		return errors.Wrap(err, "Unable to parse config")
-	}
-
-	applySystemPages(&tempConf)
-
-	userConfig = tempConf
-
-	return nil
 }
 
 func main() {
@@ -160,6 +140,11 @@ func main() {
 		}
 	}
 
+	var (
+		actor    *int
+		actStart time.Time
+	)
+
 	for {
 		select {
 		case evt := <-sd.Subscribe():
@@ -167,15 +152,25 @@ func main() {
 				offTimer.Reset(userConfig.DisplayOffTime)
 			}
 
-			kd, ok := activePage.GetKeyDefinitions(userConfig)[evt.Key]
+			if evt.Type == streamdeck.EventTypeDown {
+				actor = &evt.Key
+				actStart = time.Now()
+				continue
+			}
+
+			if evt.Key != *actor {
+				continue
+			}
+
+			kd, ok := activePage.GetKeyDefinitions(userConfig)[*actor]
 			if !ok {
 				continue
 			}
 
-			if kd.On == "down" && evt.Type == streamdeck.EventTypeDown || (kd.On == "up" || kd.On == "") && evt.Type == streamdeck.EventTypeUp || kd.On == "both" {
-				if err := triggerAction(kd); err != nil {
-					log.WithError(err).Error("Unable to execute action")
-				}
+			isLongPress := time.Since(actStart) > userConfig.LongPressDuration
+
+			if err := triggerAction(kd, isLongPress); err != nil {
+				log.WithError(err).Error("Unable to execute action")
 			}
 
 		case <-offTimer.C:
@@ -253,12 +248,20 @@ func togglePage(page string) error {
 	return nil
 }
 
-func triggerAction(kd keyDefinition) error {
+func triggerAction(kd keyDefinition, isLongPress bool) error {
 	for _, a := range kd.Actions {
-		if a.Type != "" {
-			if err := callAction(a); err != nil {
-				return err
-			}
+		if a.Type == "" {
+			// No type on that action: Invalid
+			continue
+		}
+
+		if isLongPress != a.LongPress {
+			// press duration does not match requirement
+			continue
+		}
+
+		if err := callAction(a); err != nil {
+			return err
 		}
 	}
 
