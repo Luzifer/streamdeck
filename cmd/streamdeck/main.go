@@ -34,6 +34,7 @@ var (
 	activePageCtxCancel context.CancelFunc
 	activePageName      string
 	activeLoops         []refreshingDisplayElement
+	pageStack           []string
 
 	sd *streamdeck.Client
 
@@ -243,6 +244,11 @@ func togglePage(page string) error {
 				}
 			}
 		}(idx, kd)
+	}
+
+	pageStack = append([]string{page}, pageStack...)
+	if len(pageStack) > 100 {
+		pageStack = pageStack[:100]
 	}
 
 	return nil

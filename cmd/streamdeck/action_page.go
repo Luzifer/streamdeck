@@ -1,6 +1,10 @@
 package main
 
-import "github.com/pkg/errors"
+import (
+	"math"
+
+	"github.com/pkg/errors"
+)
 
 func init() {
 	registerAction("page", actionPage{})
@@ -9,10 +13,18 @@ func init() {
 type actionPage struct{}
 
 func (actionPage) Execute(attributes map[string]interface{}) error {
-	name, ok := attributes["name"].(string)
-	if !ok {
-		return errors.New("No page name supplied")
+	name, nameOk := attributes["name"].(string)
+	relative, relativeOk := attributes["relative"].(int)
+
+	if nameOk && name != "" {
+		return errors.Wrap(togglePage(name), "switch page")
 	}
 
-	return errors.Wrap(togglePage(name), "Unable to switch page")
+	if absRel := int(math.Abs(float64(relative))); relativeOk && absRel != 0 && absRel < len(pageStack) {
+		nextPage := pageStack[absRel]
+		pageStack = pageStack[absRel+1:]
+		return errors.Wrap(togglePage(nextPage), "switch relative page")
+	}
+
+	return errors.New("no page name or relative move supplied")
 }
