@@ -1,3 +1,8 @@
+# 1.2.0 / 2020-10-30
+
+  * Fix blank page not doing anything
+  * Implement relative movement through page-stack
+
 # 1.1.0 / 2020-10-20
 
   * Add support for short / long press actions
