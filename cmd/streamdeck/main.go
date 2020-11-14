@@ -246,7 +246,10 @@ func togglePage(page string) error {
 		}(idx, kd)
 	}
 
-	pageStack = append([]string{page}, pageStack...)
+	if len(pageStack) == 0 || pageStack[0] != page {
+		pageStack = append([]string{page}, pageStack...)
+	}
+
 	if len(pageStack) > 100 {
 		pageStack = pageStack[:100]
 	}
