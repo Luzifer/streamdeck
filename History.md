@@ -1,3 +1,8 @@
+# 1.2.1 / 2020-11-17
+
+  * Fix: Use proper context for delayed errors
+  * Fix: Do not pile up the same page on refresh
+
 # 1.2.0 / 2020-10-30
 
   * Fix blank page not doing anything
