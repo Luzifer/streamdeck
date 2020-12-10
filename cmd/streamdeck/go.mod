@@ -10,6 +10,7 @@ require (
 	github.com/Luzifer/streamdeck v0.0.0-20191122003228-a2f524a6b22c
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+	github.com/gorilla/mux v1.8.0
 	github.com/jfreymuth/pulse v0.0.0-20200804114219-7d61c4938214
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646

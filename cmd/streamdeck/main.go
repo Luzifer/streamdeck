@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"path"
@@ -12,6 +13,7 @@ import (
 	"github.com/Luzifer/rconfig/v2"
 	"github.com/Luzifer/streamdeck"
 	"github.com/fsnotify/fsnotify"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sashko/go-uinput"
 	log "github.com/sirupsen/logrus"
@@ -35,6 +37,8 @@ var (
 	activePageName      string
 	activeLoops         []refreshingDisplayElement
 	pageStack           []string
+
+	router = mux.NewRouter()
 
 	sd *streamdeck.Client
 
@@ -139,6 +143,14 @@ func main() {
 		if err = fswatch.Add(cfg.Config); err != nil {
 			log.WithError(err).Error("Unable to watch config, auto-reload will not work")
 		}
+	}
+
+	if userConfig.APIListen != "" {
+		go func() {
+			log.WithError(
+				http.ListenAndServe(userConfig.APIListen, router),
+			).Fatal("API-server exited unexpectedly")
+		}()
 	}
 
 	var (
