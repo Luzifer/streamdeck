@@ -11,6 +11,7 @@ import (
 const defaultLongPressDuration = 500 * time.Millisecond
 
 type config struct {
+	APIListen         string          `json:"api_listen" yaml:"api_listen"`
 	AutoReload        bool            `json:"auto_reload" yaml:"auto_reload"`
 	CaptionBorder     int             `json:"caption_border" yaml:"caption_border"`
 	CaptionColor      [4]int          `json:"caption_color" yaml:"caption_color"`
