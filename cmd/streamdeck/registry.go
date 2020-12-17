@@ -12,7 +12,7 @@ import (
 const errorDisplayElementType = "color"
 
 var errorDisplayElementAttributes = attributeCollection{
-	RGBA: []uint8{0xff, 0x0, 0x0, 0xff},
+	RGBA: []int{0xff, 0x0, 0x0, 0xff},
 }
 
 type action interface {
