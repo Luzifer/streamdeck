@@ -8,7 +8,7 @@ func applySystemPages(conf *config) {
 			Display: dynamicElement{
 				Type: "color",
 				Attributes: attributeCollection{
-					RGBA: []uint8{0x0, 0x0, 0x0, 0xff},
+					RGBA: []int{0x0, 0x0, 0x0, 0xff},
 				},
 			},
 			Actions: []dynamicElement{

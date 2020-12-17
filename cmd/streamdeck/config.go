@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
+	"image/color"
 	"os"
 	"time"
 
@@ -40,7 +41,7 @@ type attributeCollection struct {
 	Name         string            `json:"name" yaml:"name"`
 	Path         string            `json:"path" yaml:"path"`
 	Relative     int               `json:"relative" yaml:"relative"`
-	RGBA         []uint8           `json:"rgba" yaml:"rgba"`
+	RGBA         []int             `json:"rgba" yaml:"rgba"`
 	SetVolume    *float64          `json:"set_volume" yaml:"set_volume"`
 	Text         string            `json:"text" yaml:"text"`
 	URL          string            `json:"url" yaml:"url"`
@@ -57,6 +58,13 @@ func (a attributeCollection) Clone() attributeCollection {
 	gob.NewDecoder(buf).Decode(&out)
 
 	return out
+}
+
+func (a attributeCollection) RGBAToColor() color.RGBA {
+	if len(a.RGBA) != 4 {
+		return color.RGBA{}
+	}
+	return color.RGBA{uint8(a.RGBA[0]), uint8(a.RGBA[1]), uint8(a.RGBA[2]), uint8(a.RGBA[3])}
 }
 
 type config struct {

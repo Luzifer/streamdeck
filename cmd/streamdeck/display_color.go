@@ -28,7 +28,7 @@ func (d displayElementColor) Display(ctx context.Context, idx int, attributes at
 			return err
 		}
 
-		return sd.FillColor(idx, color.RGBA{attributes.RGBA[0], attributes.RGBA[1], attributes.RGBA[2], attributes.RGBA[3]})
+		return sd.FillColor(idx, attributes.RGBAToColor())
 	}
 
 	return errors.New("No valid attributes specified for type color")

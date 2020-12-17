@@ -82,7 +82,7 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 			return errors.New("RGBA color definition needs 4 hex values")
 		}
 
-		textColor = color.RGBA{attributes.RGBA[0], attributes.RGBA[1], attributes.RGBA[2], attributes.RGBA[3]}
+		textColor = attributes.RGBAToColor()
 	}
 
 	// Initialize fontsize
