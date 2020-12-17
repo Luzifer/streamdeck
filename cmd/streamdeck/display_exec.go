@@ -25,25 +25,15 @@ type displayElementExec struct {
 	running bool
 }
 
-func (d displayElementExec) Display(ctx context.Context, idx int, attributes map[string]interface{}) error {
+func (d displayElementExec) Display(ctx context.Context, idx int, attributes attributeCollection) error {
 	var (
 		err         error
 		imgRenderer = newTextOnImageRenderer()
 	)
 
 	// Initialize command
-	cmd, ok := attributes["command"].([]interface{})
-	if !ok {
+	if attributes.Command == nil {
 		return errors.New("No command supplied")
-	}
-
-	var args []string
-	for _, c := range cmd {
-		if v, ok := c.(string); ok {
-			args = append(args, v)
-			continue
-		}
-		return errors.New("Command conatins non-string argument")
 	}
 
 	// Execute command and parse it
@@ -51,22 +41,11 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 
 	processEnv := env.ListToMap(os.Environ())
 
-	if e, ok := attributes["env"].(map[interface{}]interface{}); ok {
-		for k, v := range e {
-			key, ok := k.(string)
-			if !ok {
-				continue
-			}
-			value, ok := v.(string)
-			if !ok {
-				continue
-			}
-
-			processEnv[key] = value
-		}
+	for k, v := range attributes.Env {
+		processEnv[k] = v
 	}
 
-	command := exec.Command(args[0], args[1:]...)
+	command := exec.Command(attributes.Command[0], attributes.Command[1:]...)
 	command.Env = env.MapToList(processEnv)
 	command.Stdout = buf
 
@@ -74,65 +53,50 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 		return errors.Wrap(err, "Command has exit != 0")
 	}
 
-	attributes["text"] = strings.TrimSpace(buf.String())
+	attributes.Text = strings.TrimSpace(buf.String())
 
-	tmpAttrs := map[string]interface{}{}
+	tmpAttrs := attributes.Clone()
 	if err = json.Unmarshal(buf.Bytes(), &tmpAttrs); err == nil {
 		// Reset text to empty as it was parsable json
-		attributes["text"] = ""
-
-		for k, v := range tmpAttrs {
-			attributes[k] = v
-		}
+		attributes = tmpAttrs
 	}
 
 	// Initialize background
-	if filename, ok := attributes["image"].(string); ok {
-		if err = imgRenderer.DrawBackgroundFromFile(filename); err != nil {
+	if attributes.Image != "" {
+		if err = imgRenderer.DrawBackgroundFromFile(attributes.Image); err != nil {
 			return errors.Wrap(err, "Unable to draw background from disk")
 		}
 	}
 
 	// Initialize color
 	var textColor color.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
-	if rgba, ok := attributes["color"].([]interface{}); ok {
-		if len(rgba) != 4 {
+	if attributes.RGBA != nil {
+		if len(attributes.RGBA) != 4 {
 			return errors.New("RGBA color definition needs 4 hex values")
 		}
 
-		tmpCol := color.RGBA{}
-
-		for cidx, vp := range []*uint8{&tmpCol.R, &tmpCol.G, &tmpCol.B, &tmpCol.A} {
-			switch rgba[cidx].(type) {
-			case int:
-				*vp = uint8(rgba[cidx].(int))
-			case float64:
-				*vp = uint8(rgba[cidx].(float64))
-			}
-		}
-
-		textColor = tmpCol
+		textColor = color.RGBA{attributes.RGBA[0], attributes.RGBA[1], attributes.RGBA[2], attributes.RGBA[3]}
 	}
 
 	// Initialize fontsize
 	var fontsize float64 = 120
-	if v, ok := attributes["font_size"].(float64); ok {
-		fontsize = v
+	if attributes.FontSize != nil {
+		fontsize = *attributes.FontSize
 	}
 
 	border := 10
-	if v, ok := attributes["border"].(int); ok {
-		border = v
+	if attributes.Border != nil {
+		border = *attributes.Border
 	}
 
-	if strings.TrimSpace(attributes["text"].(string)) != "" {
-		if err = imgRenderer.DrawBigText(strings.TrimSpace(attributes["text"].(string)), fontsize, border, textColor); err != nil {
+	if strings.TrimSpace(attributes.Text) != "" {
+		if err = imgRenderer.DrawBigText(strings.TrimSpace(attributes.Text), fontsize, border, textColor); err != nil {
 			return errors.Wrap(err, "Unable to render text")
 		}
 	}
 
-	if caption, ok := attributes["caption"].(string); ok && strings.TrimSpace(caption) != "" {
-		if err = imgRenderer.DrawCaptionText(strings.TrimSpace(caption)); err != nil {
+	if strings.TrimSpace(attributes.Caption) != "" {
+		if err = imgRenderer.DrawCaptionText(strings.TrimSpace(attributes.Caption)); err != nil {
 			return errors.Wrap(err, "Unable to render caption")
 		}
 	}
@@ -149,24 +113,15 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 	return errors.Wrap(sd.FillImage(idx, imgRenderer.GetImage()), "Unable to set image")
 }
 
-func (d displayElementExec) NeedsLoop(attributes map[string]interface{}) bool {
-	if v, ok := attributes["interval"].(int); ok {
-		return v > 0
-	}
-
-	return false
+func (d displayElementExec) NeedsLoop(attributes attributeCollection) bool {
+	return attributes.Interval > 0
 }
 
-func (d *displayElementExec) StartLoopDisplay(ctx context.Context, idx int, attributes map[string]interface{}) error {
+func (d *displayElementExec) StartLoopDisplay(ctx context.Context, idx int, attributes attributeCollection) error {
 	d.running = true
 
-	interval := 5 * time.Second
-	if v, ok := attributes["interval"].(int); ok {
-		interval = time.Duration(v) * time.Second
-	}
-
 	go func() {
-		for tick := time.NewTicker(interval); ; <-tick.C {
+		for tick := time.NewTicker(attributes.Interval); ; <-tick.C {
 			if !d.running {
 				return
 			}

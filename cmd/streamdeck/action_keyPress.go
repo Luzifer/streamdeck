@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -14,71 +13,53 @@ func init() {
 
 type actionKeyPress struct{}
 
-func (actionKeyPress) Execute(attributes map[string]interface{}) error {
+func (actionKeyPress) Execute(attributes attributeCollection) error {
 	var (
-		delay     time.Duration
 		execCodes []uint16
-		ok        bool
 
-		keyNames    []interface{}
-		keyCodes    []interface{}
+		keyNames    []string
+		keyCodes    []int
 		useKeyNames bool
 	)
 
-	keyCodes, ok = attributes["key_codes"].([]interface{})
-	if !ok {
-		keyNames, ok = attributes["keys"].([]interface{})
-		if !ok {
+	keyCodes = attributes.KeyCodes
+	if keyCodes == nil {
+		keyNames = attributes.Keys
+		if keyNames == nil {
 			return errors.New("No key_codes or keys array present")
 		}
 		useKeyNames = true
 	}
 
-	if v, ok := attributes["delay"].(string); ok {
-		if d, err := time.ParseDuration(v); err == nil {
-			delay = d
-		}
-	}
-
 	if useKeyNames {
 		for _, k := range keyNames {
-			// Convert misdetections into strings
-			switch k.(type) {
-			case int:
-				k = strconv.Itoa(k.(int))
-			}
-
-			if kv, ok := k.(string); ok {
-				if kc, ok := uinputKeyMapping[kv]; ok {
-					execCodes = append(execCodes, kc)
-				} else {
-					return errors.Errorf("Unknown key %q", kv)
-				}
+			if kc, ok := uinputKeyMapping[k]; ok {
+				execCodes = append(execCodes, kc)
 			} else {
-				return errors.New("Unknown key type detected")
+				return errors.Errorf("Unknown key %q", k)
 			}
 		}
 	} else {
 		for _, k := range keyCodes {
-			execCodes = append(execCodes, uint16(k.(int)))
+			execCodes = append(execCodes, uint16(k))
 		}
 	}
 
-	if v, ok := attributes["mod_shift"].(bool); ok && v {
+	if attributes.ModShift {
 		if err := kbd.KeyDown(uinput.KeyLeftShift); err != nil {
 			return errors.Wrap(err, "Unable to set shift")
 		}
 		defer kbd.KeyUp(uinput.KeyLeftShift)
 	}
 
-	if v, ok := attributes["mod_alt"].(bool); ok && v {
+	if attributes.ModAlt {
 		if err := kbd.KeyDown(uinput.KeyLeftAlt); err != nil {
 			return errors.Wrap(err, "Unable to set shift")
 		}
 		defer kbd.KeyUp(uinput.KeyLeftAlt)
 	}
 
-	if v, ok := attributes["mod_ctrl"].(bool); ok && v {
+	if attributes.ModCtrl {
 		if err := kbd.KeyDown(uinput.KeyLeftCtrl); err != nil {
 			return errors.Wrap(err, "Unable to set shift")
 		}
@@ -89,7 +70,7 @@ func (actionKeyPress) Execute(attributes map[string]interface{}) error {
 		if err := kbd.KeyPress(kc); err != nil {
 			return errors.Wrap(err, "Unable to press key")
 		}
-		time.Sleep(delay)
+		time.Sleep(attributes.Delay)
 	}
 
 	return nil

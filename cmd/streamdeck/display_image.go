@@ -21,22 +21,21 @@ func init() {
 
 type displayElementImage struct{}
 
-func (d displayElementImage) Display(ctx context.Context, idx int, attributes map[string]interface{}) error {
-	filename, ok := attributes["path"].(string)
-	if !ok {
-		url, ok := attributes["url"].(string)
-		if !ok {
+func (d displayElementImage) Display(ctx context.Context, idx int, attributes attributeCollection) error {
+	filename := attributes.Path
+	if filename == "" {
+		if attributes.URL == "" {
 			return errors.New("No path or url attribute specified")
 		}
 
 		var err error
-		filename, err = d.getCacheFileName(url)
+		filename, err = d.getCacheFileName(attributes.URL)
 		if err != nil {
 			return errors.Wrap(err, "Unable to get cache filename for image url")
 		}
 
 		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			resp, err := http.Get(url)
+			resp, err := http.Get(attributes.URL)
 			if err != nil {
 				return errors.Wrap(err, "Unable to request image url")
 			}
@@ -84,7 +83,7 @@ func (d displayElementImage) getCacheFileName(url string) (string, error) {
 	}
 
 	cacheDir := path.Join(ucd, "io.luzifer.streamdeck")
-	if err = os.MkdirAll(cacheDir, 0750); err != nil {
+	if err = os.MkdirAll(cacheDir, 0o750); err != nil {
 		return "", errors.Wrap(err, "Unable to create cache dir")
 	}
 

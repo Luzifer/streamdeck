@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
 	"os"
 	"time"
 
@@ -9,6 +11,53 @@ import (
 )
 
 const defaultLongPressDuration = 500 * time.Millisecond
+
+func init() {
+	gob.Register(attributeCollection{})
+}
+
+type attributeCollection struct {
+	AttachStderr bool              `json:"attach_stderr" yaml:"attach_stderr"`
+	AttachStdout bool              `json:"attach_stdout" yaml:"attach_stdout"`
+	Border       *int              `json:"border" yaml:"border"`
+	Caption      string            `json:"caption" yaml:"caption"`
+	ChangeVolume *float64          `json:"change_volume" yaml:"change_volume"`
+	Color        string            `json:"color" yaml:"color"`
+	Command      []string          `json:"command" yaml:"command"`
+	Delay        time.Duration     `json:"delay" yaml:"delay"`
+	Device       string            `json:"device" yaml:"device"`
+	Env          map[string]string `json:"env" yaml:"env"`
+	FontSize     *float64          `json:"font_size" yaml:"font_size"`
+	Image        string            `json:"image" yaml:"image"`
+	Interval     time.Duration     `json:"interval" yaml:"interval"`
+	KeyCodes     []int             `json:"key_codes" yaml:"key_codes"`
+	Keys         []string          `json:"keys" yaml:"keys"`
+	Match        string            `json:"match" yaml:"match"`
+	ModAlt       bool              `json:"mod_alt" yaml:"mod_alt"`
+	ModCtrl      bool              `json:"mod_ctrl" yaml:"mod_ctrl"`
+	ModShift     bool              `json:"mod_shift" yaml:"mod_shift"`
+	Mute         string            `json:"mute" yaml:"mute"`
+	Name         string            `json:"name" yaml:"name"`
+	Path         string            `json:"path" yaml:"path"`
+	Relative     int               `json:"relative" yaml:"relative"`
+	RGBA         []uint8           `json:"rgba" yaml:"rgba"`
+	SetVolume    *float64          `json:"set_volume" yaml:"set_volume"`
+	Text         string            `json:"text" yaml:"text"`
+	URL          string            `json:"url" yaml:"url"`
+	Wait         bool              `json:"wait" yaml:"wait"`
+}
+
+func (a attributeCollection) Clone() attributeCollection {
+	var (
+		buf = new(bytes.Buffer)
+		out attributeCollection
+	)
+
+	gob.NewEncoder(buf).Encode(a)
+	gob.NewDecoder(buf).Decode(&out)
+
+	return out
+}
 
 type config struct {
 	AutoReload        bool            `json:"auto_reload" yaml:"auto_reload"`
@@ -37,9 +86,9 @@ type keyDefinition struct {
 }
 
 type dynamicElement struct {
-	Type       string                 `json:"type" yaml:"type"`
-	LongPress  bool                   `json:"long_press" yaml:"long_press"`
-	Attributes map[string]interface{} `json:"attributes" yaml:"attributes"`
+	Type       string              `json:"type" yaml:"type"`
+	LongPress  bool                `json:"long_press" yaml:"long_press"`
+	Attributes attributeCollection `json:"attributes" yaml:"attributes"`
 }
 
 func newConfig() config {
