@@ -8,7 +8,7 @@ func init() {
 
 type actionReloadConfig struct{}
 
-func (actionReloadConfig) Execute(attributes map[string]interface{}) error {
+func (actionReloadConfig) Execute(attributes attributeCollection) error {
 	if err := loadConfig(); err != nil {
 		return errors.Wrap(err, "Unable to reload config")
 	}

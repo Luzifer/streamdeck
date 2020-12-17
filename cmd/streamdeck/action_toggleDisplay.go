@@ -10,7 +10,7 @@ var actionToggleDisplayPreviousBrightness int
 
 type actionToggleDisplay struct{}
 
-func (actionToggleDisplay) Execute(attributes map[string]interface{}) error {
+func (actionToggleDisplay) Execute(attributes attributeCollection) error {
 	var newB int
 	if currentBrightness > 0 {
 		actionToggleDisplayPreviousBrightness = currentBrightness

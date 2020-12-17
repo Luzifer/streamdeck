@@ -7,15 +7,15 @@ func applySystemPages(conf *config) {
 		blankPage.Keys[i] = keyDefinition{
 			Display: dynamicElement{
 				Type: "color",
-				Attributes: map[string]interface{}{
-					"rgba": []interface{}{0x0, 0x0, 0x0, 0xff},
+				Attributes: attributeCollection{
+					RGBA: []uint8{0x0, 0x0, 0x0, 0xff},
 				},
 			},
 			Actions: []dynamicElement{
 				{
 					Type: "page",
-					Attributes: map[string]interface{}{
-						"relative": 1,
+					Attributes: attributeCollection{
+						Relative: 1,
 					},
 				},
 			},
