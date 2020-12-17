@@ -18,34 +18,34 @@ func init() {
 }
 
 type attributeCollection struct {
-	AttachStderr bool              `json:"attach_stderr" yaml:"attach_stderr"`
-	AttachStdout bool              `json:"attach_stdout" yaml:"attach_stdout"`
-	Border       *int              `json:"border" yaml:"border"`
-	Caption      string            `json:"caption" yaml:"caption"`
-	ChangeVolume *float64          `json:"change_volume" yaml:"change_volume"`
-	Color        string            `json:"color" yaml:"color"`
-	Command      []string          `json:"command" yaml:"command"`
-	Delay        time.Duration     `json:"delay" yaml:"delay"`
-	Device       string            `json:"device" yaml:"device"`
-	Env          map[string]string `json:"env" yaml:"env"`
-	FontSize     *float64          `json:"font_size" yaml:"font_size"`
-	Image        string            `json:"image" yaml:"image"`
-	Interval     time.Duration     `json:"interval" yaml:"interval"`
-	KeyCodes     []int             `json:"key_codes" yaml:"key_codes"`
-	Keys         []string          `json:"keys" yaml:"keys"`
-	Match        string            `json:"match" yaml:"match"`
-	ModAlt       bool              `json:"mod_alt" yaml:"mod_alt"`
-	ModCtrl      bool              `json:"mod_ctrl" yaml:"mod_ctrl"`
-	ModShift     bool              `json:"mod_shift" yaml:"mod_shift"`
-	Mute         string            `json:"mute" yaml:"mute"`
-	Name         string            `json:"name" yaml:"name"`
-	Path         string            `json:"path" yaml:"path"`
-	Relative     int               `json:"relative" yaml:"relative"`
-	RGBA         []int             `json:"rgba" yaml:"rgba"`
-	SetVolume    *float64          `json:"set_volume" yaml:"set_volume"`
-	Text         string            `json:"text" yaml:"text"`
-	URL          string            `json:"url" yaml:"url"`
-	Wait         bool              `json:"wait" yaml:"wait"`
+	AttachStderr bool              `json:"attach_stderr,omitempty" yaml:"attach_stderr,omitempty"`
+	AttachStdout bool              `json:"attach_stdout,omitempty" yaml:"attach_stdout,omitempty"`
+	Border       *int              `json:"border,omitempty" yaml:"border,omitempty"`
+	Caption      string            `json:"caption,omitempty" yaml:"caption,omitempty"`
+	ChangeVolume *float64          `json:"change_volume,omitempty" yaml:"change_volume,omitempty"`
+	Color        string            `json:"color,omitempty" yaml:"color,omitempty"`
+	Command      []string          `json:"command,omitempty" yaml:"command,omitempty"`
+	Delay        time.Duration     `json:"delay,omitempty" yaml:"delay,omitempty"`
+	Device       string            `json:"device,omitempty" yaml:"device,omitempty"`
+	Env          map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
+	FontSize     *float64          `json:"font_size,omitempty" yaml:"font_size,omitempty"`
+	Image        string            `json:"image,omitempty" yaml:"image,omitempty"`
+	Interval     time.Duration     `json:"interval,omitempty" yaml:"interval,omitempty"`
+	KeyCodes     []int             `json:"key_codes,omitempty" yaml:"key_codes,omitempty"`
+	Keys         []string          `json:"keys,omitempty" yaml:"keys,omitempty"`
+	Match        string            `json:"match,omitempty" yaml:"match,omitempty"`
+	ModAlt       bool              `json:"mod_alt,omitempty" yaml:"mod_alt,omitempty"`
+	ModCtrl      bool              `json:"mod_ctrl,omitempty" yaml:"mod_ctrl,omitempty"`
+	ModShift     bool              `json:"mod_shift,omitempty" yaml:"mod_shift,omitempty"`
+	Mute         string            `json:"mute,omitempty" yaml:"mute,omitempty"`
+	Name         string            `json:"name,omitempty" yaml:"name,omitempty"`
+	Path         string            `json:"path,omitempty" yaml:"path,omitempty"`
+	Relative     int               `json:"relative,omitempty" yaml:"relative,omitempty"`
+	RGBA         []int             `json:"rgba,omitempty" yaml:"rgba,omitempty"`
+	SetVolume    *float64          `json:"set_volume,omitempty" yaml:"set_volume,omitempty"`
+	Text         string            `json:"text,omitempty" yaml:"text,omitempty"`
+	URL          string            `json:"url,omitempty" yaml:"url,omitempty"`
+	Wait         bool              `json:"wait,omitempty" yaml:"wait,omitempty"`
 }
 
 func (a attributeCollection) Clone() attributeCollection {
