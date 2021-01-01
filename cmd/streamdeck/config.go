@@ -63,8 +63,13 @@ func loadConfig() error {
 	}
 	defer userConfFile.Close()
 
-	tempConf := newConfig()
-	if err = yaml.NewDecoder(userConfFile).Decode(&tempConf); err != nil {
+	var (
+		decoder  = yaml.NewDecoder(userConfFile)
+		tempConf = newConfig()
+	)
+
+	decoder.SetStrict(true)
+	if err = decoder.Decode(&tempConf); err != nil {
 		return errors.Wrap(err, "Unable to parse config")
 	}
 
