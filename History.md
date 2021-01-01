@@ -1,3 +1,7 @@
+# 1.2.2 / 2021-01-01
+
+  * [#4] Use strict config parsing
+
 # 1.2.1 / 2020-11-17
 
   * Fix: Use proper context for delayed errors
