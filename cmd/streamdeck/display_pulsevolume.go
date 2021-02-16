@@ -19,18 +19,16 @@ func init() {
 
 type displayElementPulseVolume struct{}
 
-func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attributes map[string]interface{}) error {
+func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attributes attributeCollection) error {
 	if pulseClient == nil {
 		return errors.New("PulseAudio client not initialized")
 	}
 
-	devType, ok := attributes["device"].(string)
-	if !ok {
+	if attributes.Device == "" {
 		return errors.New("Missing 'device' attribute")
 	}
 
-	match, ok := attributes["match"].(string)
-	if !ok {
+	if attributes.Match == "" {
 		return errors.New("Missing 'match' attribute")
 	}
 
@@ -41,19 +39,19 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 		volume     float64
 	)
 
-	switch devType {
+	switch attributes.Device {
 
 	case "input":
-		volume, mute, _, _, err = pulseClient.GetSinkInputVolume(match)
+		volume, mute, _, _, err = pulseClient.GetSinkInputVolume(attributes.Match)
 
 	case "sink":
-		volume, mute, _, _, err = pulseClient.GetSinkVolume(match)
+		volume, mute, _, _, err = pulseClient.GetSinkVolume(attributes.Match)
 
 	case "source":
-		volume, mute, _, _, err = pulseClient.GetSourceVolume(match)
+		volume, mute, _, _, err = pulseClient.GetSourceVolume(attributes.Match)
 
 	default:
-		return errors.Errorf("Unsupported device type: %q", devType)
+		return errors.Errorf("Unsupported device type: %q", attributes.Device)
 
 	}
 
@@ -79,42 +77,31 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 	}
 
 	// Initialize color
-	if rgba, ok := attributes["color"].([]interface{}); ok {
-		if len(rgba) != 4 {
+	if attributes.RGBA != nil {
+		if len(attributes.RGBA) != 4 {
 			return errors.New("RGBA color definition needs 4 hex values")
 		}
 
-		tmpCol := color.RGBA{}
-
-		for cidx, vp := range []*uint8{&tmpCol.R, &tmpCol.G, &tmpCol.B, &tmpCol.A} {
-			switch rgba[cidx].(type) {
-			case int:
-				*vp = uint8(rgba[cidx].(int))
-			case float64:
-				*vp = uint8(rgba[cidx].(float64))
-			}
-		}
-
-		textColor = tmpCol
+		textColor = attributes.RGBAToColor()
 	}
 
 	// Initialize fontsize
 	var fontsize float64 = 120
-	if v, ok := attributes["font_size"].(float64); ok {
-		fontsize = v
+	if attributes.FontSize != nil {
+		fontsize = *attributes.FontSize
 	}
 
-	var border = 10
-	if v, ok := attributes["border"].(int); ok {
-		border = v
+	border := 10
+	if attributes.Border != nil {
+		border = *attributes.Border
 	}
 
 	if err = img.DrawBigText(text, fontsize, border, textColor); err != nil {
 		return errors.Wrap(err, "Unable to draw text")
 	}
 
-	if caption, ok := attributes["caption"].(string); ok && strings.TrimSpace(caption) != "" {
-		if err = img.DrawCaptionText(strings.TrimSpace(caption)); err != nil {
+	if strings.TrimSpace(attributes.Caption) != "" {
+		if err = img.DrawCaptionText(strings.TrimSpace(attributes.Caption)); err != nil {
 			return errors.Wrap(err, "Unable to render caption")
 		}
 	}
@@ -127,12 +114,12 @@ func (d displayElementPulseVolume) Display(ctx context.Context, idx int, attribu
 	return errors.Wrap(sd.FillImage(idx, img.GetImage()), "Unable to set image")
 }
 
-func (d displayElementPulseVolume) NeedsLoop(attributes map[string]interface{}) bool { return true }
+func (d displayElementPulseVolume) NeedsLoop(attributes attributeCollection) bool { return true }
 
-func (d *displayElementPulseVolume) StartLoopDisplay(ctx context.Context, idx int, attributes map[string]interface{}) error {
-	var interval = time.Second
-	if v, ok := attributes["interval"].(int); ok {
-		interval = time.Duration(v) * time.Second
+func (d *displayElementPulseVolume) StartLoopDisplay(ctx context.Context, idx int, attributes attributeCollection) error {
+	interval := time.Second
+	if attributes.Interval > 0 {
+		interval = attributes.Interval
 	}
 
 	go func() {

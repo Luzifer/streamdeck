@@ -11,21 +11,21 @@ import (
 
 const errorDisplayElementType = "color"
 
-var errorDisplayElementAttributes = map[string]interface{}{
-	"rgba": []interface{}{0xff, 0x0, 0x0, 0xff},
+var errorDisplayElementAttributes = attributeCollection{
+	RGBA: []int{0xff, 0x0, 0x0, 0xff},
 }
 
 type action interface {
-	Execute(attributes map[string]interface{}) error
+	Execute(attributes attributeCollection) error
 }
 
 type displayElement interface {
-	Display(ctx context.Context, idx int, attributes map[string]interface{}) error
+	Display(ctx context.Context, idx int, attributes attributeCollection) error
 }
 
 type refreshingDisplayElement interface {
-	NeedsLoop(attributes map[string]interface{}) bool
-	StartLoopDisplay(ctx context.Context, idx int, attributes map[string]interface{}) error
+	NeedsLoop(attributes attributeCollection) bool
+	StartLoopDisplay(ctx context.Context, idx int, attributes attributeCollection) error
 	StopLoopDisplay() error
 }
 

@@ -13,13 +13,13 @@ func init() {
 
 type displayElementColor struct{}
 
-func (d displayElementColor) Display(ctx context.Context, idx int, attributes map[string]interface{}) error {
-	if name, ok := attributes["color"].(string); ok {
-		return d.displayPredefinedColor(idx, name)
+func (d displayElementColor) Display(ctx context.Context, idx int, attributes attributeCollection) error {
+	if attributes.Color != "" {
+		return d.displayPredefinedColor(idx, attributes.Color)
 	}
 
-	if rgba, ok := attributes["rgba"].([]interface{}); ok {
-		if len(rgba) != 4 {
+	if attributes.RGBA != nil {
+		if len(attributes.RGBA) != 4 {
 			return errors.New("RGBA color definition needs 4 hex values")
 		}
 
@@ -28,7 +28,7 @@ func (d displayElementColor) Display(ctx context.Context, idx int, attributes ma
 			return err
 		}
 
-		return sd.FillColor(idx, color.RGBA{uint8(rgba[0].(int)), uint8(rgba[1].(int)), uint8(rgba[2].(int)), uint8(rgba[3].(int))})
+		return sd.FillColor(idx, attributes.RGBAToColor())
 	}
 
 	return errors.New("No valid attributes specified for type color")
