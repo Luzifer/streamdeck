@@ -47,7 +47,7 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 	}
 
 	// Execute command and parse it
-	var buf = new(bytes.Buffer)
+	buf := new(bytes.Buffer)
 
 	processEnv := env.ListToMap(os.Environ())
 
@@ -120,7 +120,7 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes map
 		fontsize = v
 	}
 
-	var border = 10
+	border := 10
 	if v, ok := attributes["border"].(int); ok {
 		border = v
 	}
@@ -160,7 +160,7 @@ func (d displayElementExec) NeedsLoop(attributes map[string]interface{}) bool {
 func (d *displayElementExec) StartLoopDisplay(ctx context.Context, idx int, attributes map[string]interface{}) error {
 	d.running = true
 
-	var interval = 5 * time.Second
+	interval := 5 * time.Second
 	if v, ok := attributes["interval"].(int); ok {
 		interval = time.Duration(v) * time.Second
 	}
