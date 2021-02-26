@@ -114,7 +114,14 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes att
 }
 
 func (d displayElementExec) NeedsLoop(attributes attributeCollection) bool {
-	return attributes.Interval > 0
+	if attributes.Interval > 0 && attributes.Interval < 100*time.Millisecond {
+		log.WithFields(log.Fields{
+			"tpye":     "exec",
+			"interval": attributes.Interval,
+		}).Warn("Ignoring interval below 100ms")
+	}
+
+	return attributes.Interval > 100*time.Millisecond
 }
 
 func (d *displayElementExec) StartLoopDisplay(ctx context.Context, idx int, attributes attributeCollection) error {

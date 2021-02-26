@@ -118,8 +118,14 @@ func (d displayElementPulseVolume) NeedsLoop(attributes attributeCollection) boo
 
 func (d *displayElementPulseVolume) StartLoopDisplay(ctx context.Context, idx int, attributes attributeCollection) error {
 	interval := time.Second
-	if attributes.Interval > 0 {
+	if attributes.Interval > 100*time.Millisecond {
 		interval = attributes.Interval
+	} else if attributes.Interval > 0 {
+		log.WithFields(log.Fields{
+			"tpye":     "pulsevolume",
+			"idx":      idx,
+			"interval": attributes.Interval,
+		}).Warn("Ignoring interval below 100ms")
 	}
 
 	go func() {
