@@ -17,59 +17,48 @@ type displayElementText struct {
 	running bool
 }
 
-func (d displayElementText) Display(ctx context.Context, idx int, attributes map[string]interface{}) error {
+func (d displayElementText) Display(ctx context.Context, idx int, attributes attributeCollection) error {
 	var (
 		err         error
 		imgRenderer = newTextOnImageRenderer()
 	)
 
 	// Initialize background
-	if filename, ok := attributes["image"].(string); ok {
-		if err = imgRenderer.DrawBackgroundFromFile(filename); err != nil {
+	if attributes.Image != "" {
+		if err = imgRenderer.DrawBackgroundFromFile(attributes.Image); err != nil {
 			return errors.Wrap(err, "Unable to draw background from disk")
 		}
 	}
 
 	// Initialize color
 	var textColor color.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
-	if rgba, ok := attributes["color"].([]interface{}); ok {
-		if len(rgba) != 4 {
+	if attributes.RGBA != nil {
+		if len(attributes.RGBA) != 4 {
 			return errors.New("RGBA color definition needs 4 hex values")
 		}
 
-		tmpCol := color.RGBA{}
-
-		for cidx, vp := range []*uint8{&tmpCol.R, &tmpCol.G, &tmpCol.B, &tmpCol.A} {
-			switch rgba[cidx].(type) {
-			case int:
-				*vp = uint8(rgba[cidx].(int))
-			case float64:
-				*vp = uint8(rgba[cidx].(float64))
-			}
-		}
-
-		textColor = tmpCol
+		textColor = attributes.RGBAToColor()
 	}
 
 	// Initialize fontsize
 	var fontsize float64 = 120
-	if v, ok := attributes["font_size"].(float64); ok {
-		fontsize = v
+	if attributes.FontSize != nil {
+		fontsize = *attributes.FontSize
 	}
 
 	border := 10
-	if v, ok := attributes["border"].(int); ok {
-		border = v
+	if attributes.Border != nil {
+		border = *attributes.Border
 	}
 
-	if strings.TrimSpace(attributes["text"].(string)) != "" {
-		if err = imgRenderer.DrawBigText(strings.TrimSpace(attributes["text"].(string)), fontsize, border, textColor); err != nil {
+	if strings.TrimSpace(attributes.Text) != "" {
+		if err = imgRenderer.DrawBigText(strings.TrimSpace(attributes.Text), fontsize, border, textColor); err != nil {
 			return errors.Wrap(err, "Unable to render text")
 		}
 	}
 
-	if caption, ok := attributes["caption"].(string); ok && strings.TrimSpace(caption) != "" {
-		if err = imgRenderer.DrawCaptionText(strings.TrimSpace(caption)); err != nil {
+	if strings.TrimSpace(attributes.Caption) != "" {
+		if err = imgRenderer.DrawCaptionText(strings.TrimSpace(attributes.Caption)); err != nil {
 			return errors.Wrap(err, "Unable to render caption")
 		}
 	}
@@ -86,4 +75,4 @@ func (d displayElementText) Display(ctx context.Context, idx int, attributes map
 	return errors.Wrap(sd.FillImage(idx, imgRenderer.GetImage()), "Unable to set image")
 }
 
-func (d displayElementText) NeedsLoop(attributes map[string]interface{}) bool { return false }
+func (d displayElementText) NeedsLoop(attributes attributeCollection) bool { return false }
