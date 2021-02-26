@@ -1,3 +1,7 @@
+# 1.3.0 / 2021-02-26
+
+  * Add "text" display element
+
 # 1.2.2 / 2021-01-01
 
   * [#4] Use strict config parsing
