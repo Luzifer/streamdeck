@@ -47,23 +47,30 @@ func (actionKeyPress) Execute(attributes attributeCollection) error {
 
 	if attributes.ModShift {
 		if err := kbd.KeyDown(uinput.KeyLeftShift); err != nil {
-			return errors.Wrap(err, "Unable to set shift")
+			return errors.Wrap(err, "Unable to set Shift key")
 		}
 		defer kbd.KeyUp(uinput.KeyLeftShift)
 	}
 
 	if attributes.ModAlt {
 		if err := kbd.KeyDown(uinput.KeyLeftAlt); err != nil {
-			return errors.Wrap(err, "Unable to set shift")
+			return errors.Wrap(err, "Unable to set Alt key")
 		}
 		defer kbd.KeyUp(uinput.KeyLeftAlt)
 	}
 
 	if attributes.ModCtrl {
 		if err := kbd.KeyDown(uinput.KeyLeftCtrl); err != nil {
-			return errors.Wrap(err, "Unable to set shift")
+			return errors.Wrap(err, "Unable to set Ctrl key")
 		}
 		defer kbd.KeyUp(uinput.KeyLeftCtrl)
+	}
+
+	if attributes.ModMeta {
+		if err := kbd.KeyDown(uinput.KeyLeftMeta); err != nil {
+			return errors.Wrap(err, "Unable to set Meta key")
+		}
+		defer kbd.KeyUp(uinput.KeyLeftMeta)
 	}
 
 	for _, kc := range execCodes {
