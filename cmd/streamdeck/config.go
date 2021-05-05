@@ -37,6 +37,7 @@ type attributeCollection struct {
 	ModAlt       bool              `json:"mod_alt,omitempty" yaml:"mod_alt,omitempty"`
 	ModCtrl      bool              `json:"mod_ctrl,omitempty" yaml:"mod_ctrl,omitempty"`
 	ModShift     bool              `json:"mod_shift,omitempty" yaml:"mod_shift,omitempty"`
+	ModMeta      bool              `json:"mod_meta,omitempty" yaml:"mod_meta,omitempty"`
 	Mute         string            `json:"mute,omitempty" yaml:"mute,omitempty"`
 	Name         string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Path         string            `json:"path,omitempty" yaml:"path,omitempty"`
