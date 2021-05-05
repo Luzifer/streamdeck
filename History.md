@@ -1,3 +1,9 @@
+# 1.4.0 / 2021-05-05
+
+  * Add Meta/Windows/Super\_L modifier (#10) (Thanks @pheerai)
+  * Prevent system crash by too fast executions
+  * Move configuration to more stable format (#8)
+
 # 1.3.0 / 2021-02-26
 
   * Add "text" display element
