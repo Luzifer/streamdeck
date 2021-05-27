@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"image"
 	_ "image/jpeg"
 	_ "image/png"
 	"io"
 	"net/http"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -55,25 +55,27 @@ func (d displayElementImage) Display(ctx context.Context, idx int, attributes at
 		}
 	}
 
-	f, err := os.Open(filename)
-	if err != nil {
-		return errors.Wrap(err, "Unable to open image")
-	}
-	defer f.Close()
+	var (
+		err         error
+		imgRenderer = newTextOnImageRenderer()
+	)
 
-	img, _, err := image.Decode(f)
-	if err != nil {
-		return errors.Wrap(err, "Umable to decode image")
+	if err = imgRenderer.DrawBackgroundFromFile(filename); err != nil {
+		return errors.Wrap(err, "drawing background from disk")
 	}
 
-	img = autoSizeImage(img, sd.IconSize())
+	if strings.TrimSpace(attributes.Caption) != "" {
+		if err = imgRenderer.DrawCaptionText(strings.TrimSpace(attributes.Caption)); err != nil {
+			return errors.Wrap(err, "rendering caption")
+		}
+	}
 
 	if err := ctx.Err(); err != nil {
 		// Page context was cancelled, do not draw
 		return err
 	}
 
-	return errors.Wrap(sd.FillImage(idx, img), "Unable to set image")
+	return errors.Wrap(sd.FillImage(idx, imgRenderer.GetImage()), "setting image")
 }
 
 func (d displayElementImage) getCacheFileName(url string) (string, error) {
