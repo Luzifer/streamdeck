@@ -1,3 +1,7 @@
+# 1.5.0 / 2021-05-27
+
+  * Add caption support for image buttons
+
 # 1.4.0 / 2021-05-05
 
   * Add Meta/Windows/Super\_L modifier (#10) (Thanks @pheerai)
