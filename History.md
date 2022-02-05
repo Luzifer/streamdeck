@@ -1,3 +1,7 @@
+# 1.6.0 / 2022-02-05
+
+  * Add support for StreamDeck Mini
+
 # 1.5.0 / 2021-05-27
 
   * Add caption support for image buttons
