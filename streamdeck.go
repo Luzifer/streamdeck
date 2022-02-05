@@ -15,11 +15,14 @@ const (
 	StreamDeckOriginalV2 uint16 = 0x006d
 	// Stremdeck XL (0fd9:006c) 32 keys
 	StreamDeckXL uint16 = 0x006c
+	// StreamDeck Mini (0fd9:0063) 6 keys
+	StreamDeckMini uint16 = 0x0063
 )
 
 var DeckToName = map[uint16]string{
 	StreamDeckOriginalV2: "StreamDeck Original V2",
 	StreamDeckXL:         "StreamDeck XL",
+	StreamDeckMini:       "StreamDeck Mini",
 }
 
 // EventType represents the state of a button (Up / Down)

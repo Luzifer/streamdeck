@@ -12,6 +12,7 @@
 
 - Elgato StreamDeck Original V2 (15 keys, ID `0fd9:006d`)
 - Elgato StreamDeck XL (32 keys, ID `0fd9:006c`)
+- Elgato StreamDeck Mini (6 keys, ID `0fd9:0063`)
 
 ## Usage
 

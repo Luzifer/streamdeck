@@ -47,4 +47,5 @@ type deckConfig interface {
 var decks = map[uint16]deckConfig{
 	StreamDeckOriginalV2: &deckConfigOriginalV2{},
 	StreamDeckXL:         &deckConfigXL{},
+	StreamDeckMini:       &deckConfigMini{},
 }
