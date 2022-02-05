@@ -1,6 +1,6 @@
 # 1.6.0 / 2022-02-05
 
-  * Add support for StreamDeck Mini
+  * Add support for StreamDeck Mini (#12) (Thanks to @mcrute)
 
 # 1.5.0 / 2021-05-27
 
