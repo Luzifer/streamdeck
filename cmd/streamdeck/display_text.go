@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"image/color"
 	_ "image/jpeg"
 	_ "image/png"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -24,6 +25,19 @@ func (d displayElementText) Display(ctx context.Context, idx int, attributes att
 	)
 
 	// Initialize background
+	if attributes.BackgroundColor != nil {
+		if len(attributes.BackgroundColor) != 4 {
+			return errors.New("Background color definition needs 4 hex values")
+		}
+
+		if err := ctx.Err(); err != nil {
+			// Page context was cancelled, do not draw
+			return err
+		}
+
+		imgRenderer.DrawBackgroundColor(attributes.BackgroundToColor())
+	}
+
 	if attributes.Image != "" {
 		if err = imgRenderer.DrawBackgroundFromFile(attributes.Image); err != nil {
 			return errors.Wrap(err, "Unable to draw background from disk")

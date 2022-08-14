@@ -42,6 +42,18 @@ func (t *textOnImageRenderer) DrawBackground(bgi image.Image) {
 	draw.Draw(t.img, t.img.Bounds(), bgi, image.ZP, draw.Src)
 }
 
+func (t *textOnImageRenderer) DrawBackgroundColor(col color.RGBA) {
+	img := image.NewRGBA(image.Rect(0, 0, sd.IconSize(), sd.IconSize()))
+
+	for x := 0; x < sd.IconSize(); x++ {
+		for y := 0; y < sd.IconSize(); y++ {
+			img.Set(x, y, col)
+		}
+	}
+
+	t.DrawBackground(img)
+}
+
 func (t *textOnImageRenderer) DrawBackgroundFromFile(filename string) error {
 	bgi, err := t.getImageFromDisk(filename)
 	if err != nil {
@@ -70,7 +82,7 @@ func (t *textOnImageRenderer) DrawBigText(text string, fontSizeHint float64, bor
 }
 
 func (t *textOnImageRenderer) DrawCaptionText(text string) error {
-	var fontFile = userConfig.CaptionFont
+	fontFile := userConfig.CaptionFont
 	if fontFile == "" {
 		fontFile = userConfig.RenderFont
 	}
@@ -91,7 +103,7 @@ func (t *textOnImageRenderer) DrawCaptionText(text string) error {
 		}
 	}
 
-	var anchor = textDrawAnchorBottom
+	anchor := textDrawAnchorBottom
 	if userConfig.CaptionPosition == "top" {
 		anchor = textDrawAnchorTop
 	}
