@@ -48,4 +48,5 @@ var decks = map[uint16]deckConfig{
 	StreamDeckOriginalV2: &deckConfigOriginalV2{},
 	StreamDeckXL:         &deckConfigXL{},
 	StreamDeckMini:       &deckConfigMini{},
+	StreamDeckMiniV2:     &deckConfigMini{},
 }
