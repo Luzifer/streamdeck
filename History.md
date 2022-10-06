@@ -1,3 +1,9 @@
+# 1.7.0 / 2022-10-06
+
+  * Add support for StreamDeck Mini V2
+  * Add `background_color` attribute to `exec` display elements
+  * Add `background_color` attribute to `text` display elements
+
 # 1.6.0 / 2022-02-05
 
   * Add support for StreamDeck Mini (#12) (Thanks to @mcrute)
