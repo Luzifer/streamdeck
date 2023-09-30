@@ -1,25 +1,28 @@
 module github.com/Luzifer/streamdeck/cmd/streamdeck
 
-go 1.13
+go 1.21
 
 replace github.com/Luzifer/streamdeck => ../../
 
 require (
-	github.com/Luzifer/go_helpers/v2 v2.10.0
-	github.com/Luzifer/rconfig/v2 v2.2.1
-	github.com/Luzifer/streamdeck v0.0.0-20191122003228-a2f524a6b22c
-	github.com/fsnotify/fsnotify v1.4.7
+	github.com/Luzifer/go_helpers/v2 v2.20.1
+	github.com/Luzifer/rconfig/v2 v2.4.0
+	github.com/Luzifer/streamdeck v1.7.0
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
-	github.com/jfreymuth/pulse v0.0.0-20200804114219-7d61c4938214
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/jfreymuth/pulse v0.1.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/pkg/errors v0.8.1
-	github.com/sashko/go-uinput v0.0.0-20180923134002-15fcac7aa54a
-	github.com/sirupsen/logrus v1.4.2
+	github.com/pkg/errors v0.9.1
+	github.com/sashko/go-uinput v0.0.0-20200718185411-c753d6644126
+	github.com/sirupsen/logrus v1.9.3
+	github.com/sstallion/go-hid v0.14.1
+	golang.org/x/image v0.13.0
+	gopkg.in/yaml.v2 v2.4.0
+)
+
+require (
+	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/sstallion/go-hid v0.0.0-20190621001400-1cf4630be9f4
-	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
-	golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e // indirect
-	gopkg.in/validator.v2 v2.0.0-20191107172027-c3144fdedc21 // indirect
-	gopkg.in/yaml.v2 v2.2.7
+	golang.org/x/sys v0.13.0 // indirect
+	gopkg.in/validator.v2 v2.0.1 // indirect
 )
