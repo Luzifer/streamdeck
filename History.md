@@ -1,3 +1,7 @@
+# 1.7.1 / 2023-10-15
+
+  * Update dependencies
+
 # 1.7.0 / 2022-10-06
 
   * Add support for StreamDeck Mini V2
