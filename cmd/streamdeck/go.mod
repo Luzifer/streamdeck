@@ -16,7 +16,7 @@ require (
 	github.com/sashko/go-uinput v0.0.0-20200718185411-c753d6644126
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sstallion/go-hid v0.14.1
-	golang.org/x/image v0.13.0
+	golang.org/x/image v0.18.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
