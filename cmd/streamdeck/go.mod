@@ -12,7 +12,6 @@ require (
 	github.com/Luzifer/streamdeck v1.7.1
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
-	github.com/jfreymuth/pulse v0.1.1
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pkg/errors v0.9.1
 	github.com/sashko/go-uinput v0.0.0-20200718185411-c753d6644126
