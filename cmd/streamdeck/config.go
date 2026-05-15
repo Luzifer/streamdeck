@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v3"
 )
 
 const defaultLongPressDuration = 500 * time.Millisecond
@@ -127,7 +127,7 @@ func loadConfig() error {
 		tempConf = newConfig()
 	)
 
-	decoder.SetStrict(true)
+	decoder.KnownFields(true)
 	if err = decoder.Decode(&tempConf); err != nil {
 		return fmt.Errorf("parsing config: %w", err)
 	}
