@@ -2,37 +2,39 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sync"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
 const errorDisplayElementType = "color"
 
+type (
+	action interface {
+		Execute(attributes attributeCollection) error
+	}
+
+	displayElement interface {
+		Display(ctx context.Context, idx int, attributes attributeCollection) error
+	}
+
+	refreshingDisplayElement interface {
+		NeedsLoop(attributes attributeCollection) bool
+		StartLoopDisplay(ctx context.Context, idx int, attributes attributeCollection) error
+		StopLoopDisplay() error
+	}
+)
+
 var errorDisplayElementAttributes = attributeCollection{
 	RGBA: []int{0xff, 0x0, 0x0, 0xff},
 }
 
-type action interface {
-	Execute(attributes attributeCollection) error
-}
-
-type displayElement interface {
-	Display(ctx context.Context, idx int, attributes attributeCollection) error
-}
-
-type refreshingDisplayElement interface {
-	NeedsLoop(attributes attributeCollection) bool
-	StartLoopDisplay(ctx context.Context, idx int, attributes attributeCollection) error
-	StopLoopDisplay() error
-}
-
 var (
-	registeredActions             = map[string]reflect.Type{}
+	registeredActions             = make(map[string]reflect.Type)
 	registeredActionsLock         sync.Mutex
-	registeredDisplayElements     = map[string]reflect.Type{}
+	registeredDisplayElements     = make(map[string]reflect.Type)
 	registeredDisplayElementsLock sync.Mutex
 )
 
@@ -50,55 +52,71 @@ func registerDisplayElement(name string, handler displayElement) {
 	registeredDisplayElements[name] = reflect.TypeOf(handler)
 }
 
-func callAction(a dynamicElement) error {
+func callAction(a dynamicElement) (err error) {
 	t, ok := registeredActions[a.Type]
 	if !ok {
-		return errors.Errorf("Unknown action type %q", a.Type)
+		return fmt.Errorf("unknown action type %q", a.Type)
 	}
 
 	inst := reflect.New(t).Interface().(action)
-
-	return inst.Execute(a.Attributes)
-}
-
-func callDisplayElement(ctx context.Context, idx int, kd keyDefinition) error {
-	t, ok := registeredDisplayElements[kd.Display.Type]
-	if !ok {
-		return errors.Errorf("Unknown display type %q", kd.Display.Type)
+	if err = inst.Execute(a.Attributes); err != nil {
+		return fmt.Errorf("calling action: %w", err)
 	}
 
-	var inst interface{}
-	if t.Kind() == reflect.Ptr {
+	return nil
+}
+
+func callDisplayElement(ctx context.Context, idx int, kd keyDefinition) (err error) {
+	t, ok := registeredDisplayElements[kd.Display.Type]
+	if !ok {
+		return fmt.Errorf("unknown display type %q", kd.Display.Type)
+	}
+
+	var inst any
+	if t.Kind() == reflect.Pointer {
 		inst = reflect.New(t.Elem()).Interface()
 	} else {
 		inst = reflect.New(t).Interface()
 	}
 
-	if t.Implements(reflect.TypeOf((*refreshingDisplayElement)(nil)).Elem()) &&
+	if t.Implements(reflect.TypeFor[refreshingDisplayElement]()) &&
 		inst.(refreshingDisplayElement).NeedsLoop(kd.Display.Attributes) {
 		log.WithFields(log.Fields{
 			"key":          idx,
 			"display_type": kd.Display.Type,
 		}).Debug("Starting loop")
 		activeLoops = append(activeLoops, inst.(refreshingDisplayElement))
-		return inst.(refreshingDisplayElement).StartLoopDisplay(ctx, idx, kd.Display.Attributes)
+
+		if err = inst.(refreshingDisplayElement).StartLoopDisplay(ctx, idx, kd.Display.Attributes); err != nil {
+			return fmt.Errorf("starting display-loop: %w", err)
+		}
+
+		return nil
 	}
 
-	return inst.(displayElement).Display(ctx, idx, kd.Display.Attributes)
+	if err = inst.(displayElement).Display(ctx, idx, kd.Display.Attributes); err != nil {
+		return fmt.Errorf("displaying element: %w", err)
+	}
+
+	return nil
 }
 
-func callErrorDisplayElement(ctx context.Context, idx int) error {
+func callErrorDisplayElement(ctx context.Context, idx int) (err error) {
 	t, ok := registeredDisplayElements[errorDisplayElementType]
 	if !ok {
-		return errors.Errorf("Unknown display type %q", errorDisplayElementType)
+		return fmt.Errorf("unknown display type %q", errorDisplayElementType)
 	}
 
-	var inst interface{}
-	if t.Kind() == reflect.Ptr {
+	var inst any
+	if t.Kind() == reflect.Pointer {
 		inst = reflect.New(t.Elem()).Interface()
 	} else {
 		inst = reflect.New(t).Interface()
 	}
 
-	return inst.(displayElement).Display(ctx, idx, errorDisplayElementAttributes)
+	if err = inst.(displayElement).Display(ctx, idx, errorDisplayElementAttributes); err != nil {
+		return fmt.Errorf("displaying error element: %w", err)
+	}
+
+	return nil
 }

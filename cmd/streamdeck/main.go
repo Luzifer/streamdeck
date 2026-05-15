@@ -1,3 +1,4 @@
+// StreamDeck Command Utility
 package main
 
 import (
@@ -10,12 +11,14 @@ import (
 	"time"
 
 	"github.com/Luzifer/rconfig/v2"
-	"github.com/Luzifer/streamdeck"
 	"github.com/fsnotify/fsnotify"
-	"github.com/pkg/errors"
 	"github.com/sashko/go-uinput"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
+
+	"github.com/Luzifer/streamdeck"
 )
+
+const maxPageStackSize = 100
 
 var (
 	cfg = struct {
@@ -43,101 +46,120 @@ var (
 	version = "dev"
 )
 
-func init() {
-	cfgDir, _ := os.UserConfigDir()
+func initApp() (err error) {
+	cfgDir, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("getting user config-dir: %w", err)
+	}
+
 	rconfig.SetVariableDefaults(map[string]string{
 		"config": path.Join(cfgDir, "streamdeck.yaml"),
 	})
 
 	if err := rconfig.ParseAndValidate(&cfg); err != nil {
-		log.Fatalf("Unable to parse commandline options: %s", err)
+		return fmt.Errorf("parsing CLI options: %w", err)
+	}
+
+	l, err := logrus.ParseLevel(cfg.LogLevel)
+	if err != nil {
+		return fmt.Errorf("parsing log-level: %w", err)
+	}
+	logrus.SetLevel(l)
+
+	return nil
+}
+
+//nolint:gocognit,gocyclo,funlen // ignore for now, fix later™
+func main() {
+	var err error
+	if err = initApp(); err != nil {
+		logrus.WithError(err).Fatal("initializing app")
 	}
 
 	if cfg.VersionAndExit {
-		fmt.Printf("streamdeck %s\n", version)
+		fmt.Printf("streamdeck %s\n", version) //nolint:forbidigo // printing version to stdout is fine
 		os.Exit(0)
 	}
 
-	if l, err := log.ParseLevel(cfg.LogLevel); err != nil {
-		log.WithError(err).Fatal("Unable to parse log level")
-	} else {
-		log.SetLevel(l)
-	}
-}
-
-func main() {
 	if cfg.List {
-		listAndQuit()
+		if err = listDevices(); err != nil {
+			logrus.WithError(err).Fatal("listing devices")
+		}
+		os.Exit(0)
 	}
 
 	deck, err := selectDeckToUse()
 	if err != nil {
-		log.WithError(err).Fatal("Unable to select StreamDeck to use")
+		logrus.WithError(err).Fatal("Unable to select StreamDeck to use")
 	}
 
-	// Initalize control devices
+	// Initialize control devices
 	kbd, err = uinput.CreateKeyboard()
 	if err != nil {
-		log.WithError(err).Fatal("Unable to create uinput keyboard")
+		logrus.WithError(err).Fatal("Unable to create uinput keyboard")
 	}
-	defer kbd.Close()
+	defer kbd.Close() //nolint:errcheck // closed either way by process exit
 
 	// Initialize device
 	sd, err = streamdeck.New(deck)
 	if err != nil {
-		log.WithError(err).Fatal("Unable to open StreamDeck connection")
+		logrus.WithError(err).Fatal("Unable to open StreamDeck connection")
 	}
-	defer sd.Close()
+	defer sd.Close() //nolint:errcheck // closed either way by process exit
 
 	serial, err := sd.Serial()
 	if err != nil {
-		log.WithError(err).Fatal("Unable to read serial")
+		logrus.WithError(err).Fatal("Unable to read serial")
 	}
 
 	firmware, err := sd.GetFimwareVersion()
 	if err != nil {
-		log.WithError(err).Fatal("Unable to read firmware")
+		logrus.WithError(err).Fatal("Unable to read firmware")
 	}
 
-	log.WithFields(log.Fields{
+	logrus.WithFields(logrus.Fields{
 		"firmware": firmware,
 		"serial":   serial,
 	}).Info("Found StreamDeck")
 
 	// Load config
 	if err = loadConfig(); err != nil {
-		log.WithError(err).Fatal("Unable to load config")
+		logrus.WithError(err).Fatal("Unable to load config")
 	}
 
 	// Initial setup
 
-	sigs := make(chan os.Signal)
+	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 
-	defer sd.ResetToLogo()
+	defer func() {
+		if err := sd.ResetToLogo(); err != nil {
+			logrus.WithError(err).Error("resetting to logo")
+		}
+	}()
 
 	if err = sd.SetBrightness(userConfig.DefaultBrightness); err != nil {
-		log.WithError(err).Fatal("Unable to set brightness")
+		logrus.WithError(err).Fatal("Unable to set brightness")
 	}
 	currentBrightness = userConfig.DefaultBrightness
 
 	if err = togglePage(userConfig.DefaultPage); err != nil {
-		log.WithError(err).Error("Unable to load default page")
+		logrus.WithError(err).Error("Unable to load default page")
 	}
 
-	var offTimer *time.Timer = &time.Timer{}
+	offTimer := &time.Timer{}
 	if userConfig.DisplayOffTime > 0 {
 		offTimer = time.NewTimer(userConfig.DisplayOffTime)
 	}
 
 	fswatch, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.WithError(err).Fatal("Unable to create file watcher")
+		logrus.WithError(err).Fatal("Unable to create file watcher")
 	}
 
 	if userConfig.AutoReload {
 		if err = fswatch.Add(cfg.Config); err != nil {
-			log.WithError(err).Error("Unable to watch config, auto-reload will not work")
+			logrus.WithError(err).Error("Unable to watch config, auto-reload will not work")
 		}
 	}
 
@@ -171,20 +193,20 @@ func main() {
 			isLongPress := time.Since(actStart) > userConfig.LongPressDuration
 
 			if err := triggerAction(kd, isLongPress); err != nil {
-				log.WithError(err).Error("Unable to execute action")
+				logrus.WithError(err).Error("Unable to execute action")
 			}
 
 		case <-offTimer.C:
 			if err := togglePage("@@blank"); err != nil {
-				log.WithError(err).Error("Unable to toggle to blank page")
+				logrus.WithError(err).Error("Unable to toggle to blank page")
 			}
 
 		case evt := <-fswatch.Events:
 			if evt.Op&fsnotify.Write == fsnotify.Write {
-				log.Info("Detected change of config, reloading")
+				logrus.Info("Detected change of config, reloading")
 
 				if err := loadConfig(); err != nil {
-					log.WithError(err).Error("Unable to reload config")
+					logrus.WithError(err).Error("Unable to reload config")
 					continue
 				}
 
@@ -194,70 +216,18 @@ func main() {
 				}
 
 				if err := togglePage(nextPage); err != nil {
-					log.WithError(err).Error("Unable to reload page")
+					logrus.WithError(err).Error("Unable to reload page")
 					continue
 				}
 			}
 
 		case <-sigs:
 			return
-
 		}
 	}
 }
 
-func togglePage(page string) error {
-	if activePageCtxCancel != nil {
-		// Ensure old display events are no longer executed
-		activePageCtxCancel()
-	}
-
-	// Reset potentially running looped elements
-	for _, l := range activeLoops {
-		if err := l.StopLoopDisplay(); err != nil {
-			return errors.Wrap(err, "Unable to stop element refresh")
-		}
-	}
-	activeLoops = nil
-
-	activePage = userConfig.Pages[page]
-	activePageName = page
-	activePageCtx, activePageCtxCancel = context.WithCancel(context.Background())
-	sd.ClearAllKeys()
-
-	for idx, kd := range activePage.GetKeyDefinitions(userConfig) {
-		if kd.Display.Type == "" {
-			continue
-		}
-
-		go func(idx int, kd keyDefinition) {
-			localCtx := activePageCtx
-			keyLogger := log.WithFields(log.Fields{
-				"key":  idx,
-				"page": activePageName,
-			})
-
-			if err := callDisplayElement(localCtx, idx, kd); err != nil {
-				keyLogger.WithError(err).Error("Unable to execute display element")
-
-				if err := callErrorDisplayElement(localCtx, idx); err != nil {
-					keyLogger.WithError(err).Error("Unable to execute error display element")
-				}
-			}
-		}(idx, kd)
-	}
-
-	if len(pageStack) == 0 || pageStack[0] != page {
-		pageStack = append([]string{page}, pageStack...)
-	}
-
-	if len(pageStack) > 100 {
-		pageStack = pageStack[:100]
-	}
-
-	return nil
-}
-
+//revive:disable-next-line:flag-parameter // does not switch behavior, just denotes whether key was pressed long
 func triggerAction(kd keyDefinition, isLongPress bool) error {
 	for _, a := range kd.Actions {
 		if a.Type == "" {

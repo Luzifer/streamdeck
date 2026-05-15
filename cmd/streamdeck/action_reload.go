@@ -1,16 +1,16 @@
 package main
 
-import "github.com/pkg/errors"
+import "fmt"
+
+type actionReloadConfig struct{}
 
 func init() {
 	registerAction("reload_config", actionReloadConfig{})
 }
 
-type actionReloadConfig struct{}
-
-func (actionReloadConfig) Execute(attributes attributeCollection) error {
+func (actionReloadConfig) Execute(_ attributeCollection) error {
 	if err := loadConfig(); err != nil {
-		return errors.Wrap(err, "Unable to reload config")
+		return fmt.Errorf("reloading config: %w", err)
 	}
 
 	return togglePage(userConfig.DefaultPage)

@@ -4,36 +4,33 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"image/color"
+	"fmt"
 	_ "image/jpeg"
 	_ "image/png"
+	"maps"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
 	"github.com/Luzifer/go_helpers/v2/env"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
-func init() {
-	registerDisplayElement("exec", &displayElementExec{})
-}
+const minLoopInterval = 100 * time.Millisecond
 
 type displayElementExec struct {
 	running bool
 }
 
-func (d displayElementExec) Display(ctx context.Context, idx int, attributes attributeCollection) error {
-	var (
-		err         error
-		imgRenderer = newTextOnImageRenderer()
-	)
+func init() {
+	registerDisplayElement("exec", &displayElementExec{})
+}
 
+func (d displayElementExec) Display(ctx context.Context, idx int, attributes attributeCollection) (err error) {
 	// Initialize command
 	if attributes.Command == nil {
-		return errors.New("No command supplied")
+		return fmt.Errorf("no command supplied")
 	}
 
 	// Execute command and parse it
@@ -41,16 +38,14 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes att
 
 	processEnv := env.ListToMap(os.Environ())
 
-	for k, v := range attributes.Env {
-		processEnv[k] = v
-	}
+	maps.Copy(processEnv, attributes.Env)
 
-	command := exec.Command(attributes.Command[0], attributes.Command[1:]...)
+	command := exec.CommandContext(ctx, attributes.Command[0], attributes.Command[1:]...) //#nosec:G204 // intended to run user-defined command
 	command.Env = env.MapToList(processEnv)
 	command.Stdout = buf
 
 	if err := command.Run(); err != nil {
-		return errors.Wrap(err, "Command has exit != 0")
+		return fmt.Errorf("running command: %w", err)
 	}
 
 	attributes.Text = strings.TrimSpace(buf.String())
@@ -61,80 +56,22 @@ func (d displayElementExec) Display(ctx context.Context, idx int, attributes att
 		attributes = tmpAttrs
 	}
 
-	// Initialize background
-	if attributes.BackgroundColor != nil {
-		if len(attributes.BackgroundColor) != 4 {
-			return errors.New("Background color definition needs 4 hex values")
-		}
-
-		if err := ctx.Err(); err != nil {
-			// Page context was cancelled, do not draw
-			return err
-		}
-
-		imgRenderer.DrawBackgroundColor(attributes.BackgroundToColor())
-	}
-
-	if attributes.Image != "" {
-		if err = imgRenderer.DrawBackgroundFromFile(attributes.Image); err != nil {
-			return errors.Wrap(err, "Unable to draw background from disk")
-		}
-	}
-
-	// Initialize color
-	var textColor color.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
-	if attributes.RGBA != nil {
-		if len(attributes.RGBA) != 4 {
-			return errors.New("RGBA color definition needs 4 hex values")
-		}
-
-		textColor = attributes.RGBAToColor()
-	}
-
-	// Initialize fontsize
-	var fontsize float64 = 120
-	if attributes.FontSize != nil {
-		fontsize = *attributes.FontSize
-	}
-
-	border := 10
-	if attributes.Border != nil {
-		border = *attributes.Border
-	}
-
-	if strings.TrimSpace(attributes.Text) != "" {
-		if err = imgRenderer.DrawBigText(strings.TrimSpace(attributes.Text), fontsize, border, textColor); err != nil {
-			return errors.Wrap(err, "Unable to render text")
-		}
-	}
-
-	if strings.TrimSpace(attributes.Caption) != "" {
-		if err = imgRenderer.DrawCaptionText(strings.TrimSpace(attributes.Caption)); err != nil {
-			return errors.Wrap(err, "Unable to render caption")
-		}
-	}
-
 	if !d.running && d.NeedsLoop(attributes) {
 		return nil
 	}
 
-	if err := ctx.Err(); err != nil {
-		// Page context was cancelled, do not draw
-		return err
-	}
-
-	return errors.Wrap(sd.FillImage(idx, imgRenderer.GetImage()), "Unable to set image")
+	return displayElementText{}.Display(ctx, idx, attributes)
 }
 
-func (d displayElementExec) NeedsLoop(attributes attributeCollection) bool {
-	if attributes.Interval > 0 && attributes.Interval < 100*time.Millisecond {
+func (displayElementExec) NeedsLoop(attributes attributeCollection) bool {
+	if attributes.Interval > 0 && attributes.Interval < minLoopInterval {
 		log.WithFields(log.Fields{
-			"tpye":     "exec",
+			"type":     "exec",
 			"interval": attributes.Interval,
 		}).Warn("Ignoring interval below 100ms")
 	}
 
-	return attributes.Interval > 100*time.Millisecond
+	return attributes.Interval > minLoopInterval
 }
 
 func (d *displayElementExec) StartLoopDisplay(ctx context.Context, idx int, attributes attributeCollection) error {

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"image"
 	"image/color"
 
@@ -35,4 +37,23 @@ func autoSizeImage(img image.Image, size int) image.Image {
 	draw.Copy(dimg, pt, img, img.Bounds(), draw.Src, nil)
 
 	return dimg
+}
+
+func int4ToRGBA(parts []int) (c color.RGBA, err error) {
+	if len(parts) != 4 { //revive:disable-line:add-constant // single-use count
+		return c, fmt.Errorf("color definition needs 4 numbers")
+	}
+
+	var rangeErrors []error
+	for i, v := range parts {
+		if v < 0 || v > 255 { //revive:disable-line:add-constant // single-use boundary
+			rangeErrors = append(rangeErrors, fmt.Errorf("color component %d out of bounds 0..255: %d", i, v))
+		}
+	}
+	if err = errors.Join(rangeErrors...); err != nil {
+		return c, err
+	}
+
+	//#nosec:G115 // all values are guarded
+	return color.RGBA{uint8(parts[0]), uint8(parts[1]), uint8(parts[2]), uint8(parts[3])}, nil
 }

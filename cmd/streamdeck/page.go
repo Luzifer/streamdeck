@@ -1,5 +1,66 @@
 package main
 
+import (
+	"context"
+	"fmt"
+
+	"github.com/sirupsen/logrus"
+)
+
+func togglePage(page string) (err error) {
+	if activePageCtxCancel != nil {
+		// Ensure old display events are no longer executed
+		activePageCtxCancel()
+	}
+
+	// Reset potentially running looped elements
+	for _, l := range activeLoops {
+		if err := l.StopLoopDisplay(); err != nil {
+			return fmt.Errorf("stopping element refresh: %w", err)
+		}
+	}
+	activeLoops = nil
+
+	activePage = userConfig.Pages[page]
+	activePageName = page
+	activePageCtx, activePageCtxCancel = context.WithCancel(context.Background())
+	if err = sd.ClearAllKeys(); err != nil {
+		return fmt.Errorf("clearing keys: %w", err)
+	}
+
+	for idx, kd := range activePage.GetKeyDefinitions(userConfig) {
+		if kd.Display.Type == "" {
+			continue
+		}
+
+		go func(idx int, kd keyDefinition) {
+			localCtx := activePageCtx
+			keyLogger := logrus.WithFields(logrus.Fields{
+				"key":  idx,
+				"page": activePageName,
+			})
+
+			if err := callDisplayElement(localCtx, idx, kd); err != nil {
+				keyLogger.WithError(err).Error("Unable to execute display element")
+
+				if err := callErrorDisplayElement(localCtx, idx); err != nil {
+					keyLogger.WithError(err).Error("Unable to execute error display element")
+				}
+			}
+		}(idx, kd)
+	}
+
+	if len(pageStack) == 0 || pageStack[0] != page {
+		pageStack = append([]string{page}, pageStack...)
+	}
+
+	if len(pageStack) > maxPageStackSize {
+		pageStack = pageStack[:maxPageStackSize]
+	}
+
+	return nil
+}
+
 func (p page) GetKeyDefinitions(cfg config) map[int]keyDefinition {
 	var (
 		defMaps []map[int]keyDefinition

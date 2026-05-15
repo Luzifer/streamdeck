@@ -1,27 +1,35 @@
 package main
 
 import (
+	"fmt"
 	"math"
-
-	"github.com/pkg/errors"
 )
+
+type actionPage struct{}
 
 func init() {
 	registerAction("page", actionPage{})
 }
 
-type actionPage struct{}
-
-func (actionPage) Execute(attributes attributeCollection) error {
+func (actionPage) Execute(attributes attributeCollection) (err error) {
 	if attributes.Name != "" {
-		return errors.Wrap(togglePage(attributes.Name), "switch page")
+		if err = togglePage(attributes.Name); err != nil {
+			return fmt.Errorf("switching page: %w", err)
+		}
+
+		return nil
 	}
 
 	if absRel := int(math.Abs(float64(attributes.Relative))); absRel != 0 && absRel < len(pageStack) {
 		nextPage := pageStack[absRel]
 		pageStack = pageStack[absRel+1:]
-		return errors.Wrap(togglePage(nextPage), "switch relative page")
+
+		if err = togglePage(nextPage); err != nil {
+			return fmt.Errorf("switching relative page: %w", err)
+		}
+
+		return nil
 	}
 
-	return errors.New("no page name or relative move supplied")
+	return fmt.Errorf("no page name or relative move supplied")
 }

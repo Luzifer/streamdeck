@@ -1,31 +1,32 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"maps"
 	"os"
 	"os/exec"
 
 	"github.com/Luzifer/go_helpers/v2/env"
-	"github.com/pkg/errors"
 )
+
+type actionExec struct{}
 
 func init() {
 	registerAction("exec", actionExec{})
 }
 
-type actionExec struct{}
-
-func (actionExec) Execute(attributes attributeCollection) error {
+func (actionExec) Execute(attributes attributeCollection) (err error) {
 	if attributes.Command == nil {
-		return errors.New("No command supplied")
+		return fmt.Errorf("no command supplied")
 	}
 
 	processEnv := env.ListToMap(os.Environ())
 
-	for k, v := range attributes.Env {
-		processEnv[k] = v
-	}
+	maps.Copy(processEnv, attributes.Env)
 
-	command := exec.Command(attributes.Command[0], attributes.Command[1:]...)
+	//#nosec:G204 // intended to run user-provided command
+	command := exec.CommandContext(context.Background(), attributes.Command[0], attributes.Command[1:]...)
 	command.Env = env.MapToList(processEnv)
 
 	if attributes.AttachStdout {
@@ -36,15 +37,23 @@ func (actionExec) Execute(attributes attributeCollection) error {
 		command.Stdout = os.Stderr
 	}
 
-	if err := command.Start(); err != nil {
-		return errors.Wrap(err, "Unable to start command")
+	if err = command.Start(); err != nil {
+		return fmt.Errorf("starting command: %w", err)
 	}
 
 	// If "wait" is set to true start command and wait for execution
 	if attributes.Wait {
-		return errors.Wrap(command.Wait(), "Command was not successful")
+		if err = command.Wait(); err != nil {
+			return fmt.Errorf("waiting for command: %w", err)
+		}
+
+		return nil
 	}
 
 	// We don't wait so we release the process and don't care anymore
-	return errors.Wrap(command.Process.Release(), "Unable to release process")
+	if err = command.Process.Release(); err != nil {
+		return fmt.Errorf("releasing process: %w", err)
+	}
+
+	return nil
 }

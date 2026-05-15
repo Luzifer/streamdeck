@@ -2,46 +2,54 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"image/color"
-
-	"github.com/pkg/errors"
 )
+
+type displayElementColor struct{}
 
 func init() {
 	registerDisplayElement("color", displayElementColor{})
 }
 
-type displayElementColor struct{}
-
-func (d displayElementColor) Display(ctx context.Context, idx int, attributes attributeCollection) error {
+func (d displayElementColor) Display(ctx context.Context, idx int, attributes attributeCollection) (err error) {
 	if attributes.Color != "" {
 		return d.displayPredefinedColor(idx, attributes.Color)
 	}
 
 	if attributes.RGBA != nil {
-		if len(attributes.RGBA) != 4 {
-			return errors.New("RGBA color definition needs 4 hex values")
-		}
-
 		if err := ctx.Err(); err != nil {
 			// Page context was cancelled, do not draw
-			return err
+			return fmt.Errorf("page context cancelled: %w", err)
 		}
 
-		return sd.FillColor(idx, attributes.RGBAToColor())
+		fillColor, err := int4ToRGBA(attributes.RGBA)
+		if err != nil {
+			return fmt.Errorf("invalid 'rgba' color definition: %w", err)
+		}
+
+		if err = sd.FillColor(idx, fillColor); err != nil {
+			return fmt.Errorf("filling with color: %w", err)
+		}
+
+		return nil
 	}
 
-	return errors.New("No valid attributes specified for type color")
+	return fmt.Errorf("no valid attributes specified for type color")
 }
 
-func (displayElementColor) displayPredefinedColor(idx int, name string) error {
+func (displayElementColor) displayPredefinedColor(idx int, name string) (err error) {
 	c, ok := map[string]color.RGBA{
-		"blue": {0x0, 0x0, 0xff, 0xff},
+		"blue": {0x0, 0x0, 0xff, 0xff}, //revive:disable-line:add-constant // color definition
 	}[name]
 
 	if !ok {
-		return errors.Errorf("Unknown color %q", name)
+		return fmt.Errorf("unknown color %q", name)
 	}
 
-	return sd.FillColor(idx, c)
+	if err = sd.FillColor(idx, c); err != nil {
+		return fmt.Errorf("filling with color: %w", err)
+	}
+
+	return nil
 }

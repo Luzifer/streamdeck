@@ -1,16 +1,16 @@
 package main
 
-import "github.com/pkg/errors"
+import "fmt"
+
+type actionToggleDisplay struct{}
+
+var actionToggleDisplayPreviousBrightness int
 
 func init() {
 	registerAction("toggle_display", actionToggleDisplay{})
 }
 
-var actionToggleDisplayPreviousBrightness int
-
-type actionToggleDisplay struct{}
-
-func (actionToggleDisplay) Execute(attributes attributeCollection) error {
+func (actionToggleDisplay) Execute(_ attributeCollection) error {
 	var newB int
 	if currentBrightness > 0 {
 		actionToggleDisplayPreviousBrightness = currentBrightness
@@ -19,7 +19,7 @@ func (actionToggleDisplay) Execute(attributes attributeCollection) error {
 	}
 
 	if err := sd.SetBrightness(newB); err != nil {
-		return errors.Wrap(err, "Unable to set brightness")
+		return fmt.Errorf("setting brightness: %w", err)
 	}
 	currentBrightness = newB
 
