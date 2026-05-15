@@ -13,7 +13,7 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/sashko/go-uinput v0.0.0-20250718151327-faf003f14a20
 	github.com/sirupsen/logrus v1.9.4
-	github.com/sstallion/go-hid v0.14.1
+	github.com/sstallion/go-hid v0.15.0
 	golang.org/x/image v0.40.0
 	gopkg.in/yaml.v2 v2.4.0
 )
