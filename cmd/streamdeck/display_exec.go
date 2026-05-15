@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	_ "image/jpeg"
 	_ "image/png"
@@ -84,7 +85,12 @@ func (d *displayElementExec) StartLoopDisplay(ctx context.Context, idx int, attr
 			}
 
 			if err := d.Display(ctx, idx, attributes); err != nil {
-				log.WithError(err).Error("Unable to refresh element")
+				if errors.Is(ctx.Err(), context.Canceled) {
+					d.running = false
+					return
+				}
+
+				log.WithError(err).Error("refreshing element")
 			}
 		}
 	}()
