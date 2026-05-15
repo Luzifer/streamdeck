@@ -7,46 +7,43 @@ import (
 	"github.com/sstallion/go-hid"
 )
 
-type keyDirection uint
-
 const (
 	keyDirectionLTR keyDirection = iota
 	keyDirectionRTL
 )
 
-type deckConfig interface {
-	SetDevice(dev *hid.Device)
+type (
+	deckConfig interface {
+		SetDevice(dev *hid.Device)
 
-	NumKeys() int
-	KeyColumns() int
-	KeyRows() int
-	KeyDirection() keyDirection
-	KeyDataOffset() int
+		NumKeys() int
+		KeyColumns() int
+		KeyRows() int
+		KeyDirection() keyDirection
+		KeyDataOffset() int
 
-	TransformKeyIndex(keyIdx int) int
+		TransformKeyIndex(keyIdx int) int
 
-	IconSize() int
-	IconBytes() int
+		IconSize() int
+		IconBytes() int
 
-	Model() uint16
+		Model() uint16
 
-	FillColor(keyIdx int, col color.RGBA) error
-	FillImage(keyIdx int, img image.Image) error
-	FillPanel(img image.RGBA) error
+		FillColor(keyIdx int, col color.RGBA) error
+		FillImage(keyIdx int, img image.Image) error
+		FillPanel(img image.RGBA) error
 
-	ClearKey(keyIdx int) error
-	ClearAllKeys() error
+		ClearKey(keyIdx int) error
+		ClearAllKeys() error
 
-	SetBrightness(pct int) error
+		SetBrightness(pct int) error
 
-	ResetToLogo() error
+		ResetToLogo() error
 
-	GetFimwareVersion() (string, error)
-}
+		GetFimwareVersion() (string, error)
+	}
 
-var decks = map[uint16]deckConfig{
-	StreamDeckOriginalV2: &deckConfigOriginalV2{},
-	StreamDeckXL:         &deckConfigXL{},
-	StreamDeckMini:       &deckConfigMini{},
-	StreamDeckMiniV2:     &deckConfigMini{},
-}
+	deckConfigCreateFunc func() deckConfig
+
+	keyDirection uint
+)

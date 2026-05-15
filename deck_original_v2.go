@@ -1,8 +1,11 @@
 package streamdeck
 
+//revive:disable:add-constant // many numbers with single use or only protocol value
+
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -10,7 +13,6 @@ import (
 	"sync"
 
 	"github.com/disintegration/imaging"
-	"github.com/pkg/errors"
 	"github.com/sstallion/go-hid"
 )
 
@@ -26,26 +28,25 @@ type deckConfigOriginalV2 struct {
 	keyState []EventType
 }
 
-func newDeckConfigOriginalV2() *deckConfigOriginalV2 {
+func newDeckConfigOriginalV2() deckConfig {
 	d := &deckConfigOriginalV2{}
 	d.keyState = make([]EventType, d.NumKeys())
 
 	return d
 }
 
-func (d *deckConfigOriginalV2) SetDevice(dev *hid.Device) { d.dev = dev }
+func (d *deckConfigOriginalV2) ClearAllKeys() error {
+	for i := 0; i < d.NumKeys(); i++ {
+		if err := d.ClearKey(i); err != nil {
+			return fmt.Errorf("clearing key: %w", err)
+		}
+	}
+	return nil
+}
 
-func (d *deckConfigOriginalV2) NumKeys() int                     { return 15 }
-func (d *deckConfigOriginalV2) KeyColumns() int                  { return 5 }
-func (d *deckConfigOriginalV2) KeyRows() int                     { return 3 }
-func (d *deckConfigOriginalV2) KeyDirection() keyDirection       { return keyDirectionLTR }
-func (d *deckConfigOriginalV2) KeyDataOffset() int               { return 4 }
-func (d *deckConfigOriginalV2) TransformKeyIndex(keyIdx int) int { return keyIdx }
-
-func (d *deckConfigOriginalV2) IconSize() int  { return 72 }
-func (d *deckConfigOriginalV2) IconBytes() int { return d.IconSize() * d.IconSize() * 3 }
-
-func (d *deckConfigOriginalV2) Model() uint16 { return StreamDeckOriginalV2 }
+func (d *deckConfigOriginalV2) ClearKey(keyIdx int) error {
+	return d.FillColor(keyIdx, color.RGBA{0x0, 0x0, 0x0, 0xff})
+}
 
 func (d *deckConfigOriginalV2) FillColor(keyIdx int, col color.RGBA) error {
 	img := image.NewRGBA(image.Rect(0, 0, d.IconSize(), d.IconSize()))
@@ -60,6 +61,10 @@ func (d *deckConfigOriginalV2) FillColor(keyIdx int, col color.RGBA) error {
 }
 
 func (d *deckConfigOriginalV2) FillImage(keyIdx int, img image.Image) error {
+	if keyIdx >= d.NumKeys() || keyIdx < 0 {
+		return fmt.Errorf("key index %d out of bounds", keyIdx)
+	}
+
 	d.writeLock.Lock()
 	defer d.writeLock.Unlock()
 
@@ -69,7 +74,7 @@ func (d *deckConfigOriginalV2) FillImage(keyIdx int, img image.Image) error {
 	rimg := imaging.Rotate180(img)
 
 	if err := jpeg.Encode(buf, rimg, &jpeg.Options{Quality: 95}); err != nil {
-		return errors.Wrap(err, "Unable to encode jpeg")
+		return fmt.Errorf("encoding jpeg: %w", err)
 	}
 
 	var partIndex int16
@@ -77,7 +82,7 @@ func (d *deckConfigOriginalV2) FillImage(keyIdx int, img image.Image) error {
 		chunk := make([]byte, deckOriginalV2MaxPacketSize-deckOriginalV2HeaderSize)
 		n, err := buf.Read(chunk)
 		if err != nil {
-			return errors.Wrap(err, "Unable to read image chunk")
+			return fmt.Errorf("reading image chunk: %w", err)
 		}
 
 		var last uint8
@@ -86,13 +91,13 @@ func (d *deckConfigOriginalV2) FillImage(keyIdx int, img image.Image) error {
 		}
 
 		tbuf := new(bytes.Buffer)
-		tbuf.Write([]byte{0x02, 0x07, byte(keyIdx), last})
-		binary.Write(tbuf, binary.LittleEndian, int16(n))
-		binary.Write(tbuf, binary.LittleEndian, partIndex)
+		tbuf.Write([]byte{0x02, 0x07, byte(keyIdx), last})    //#nosec:G115 // keyIdx is guarded to safe values
+		_ = binary.Write(tbuf, binary.LittleEndian, int16(n)) //#nosec:G115 // guarded to safe values
+		_ = binary.Write(tbuf, binary.LittleEndian, partIndex)
 		tbuf.Write(chunk)
 
 		if _, err = d.dev.Write(tbuf.Bytes()); err != nil {
-			return errors.Wrap(err, "Unable to send image chunk")
+			return fmt.Errorf("sending image chunk: %w", err)
 		}
 
 		partIndex++
@@ -103,7 +108,7 @@ func (d *deckConfigOriginalV2) FillImage(keyIdx int, img image.Image) error {
 
 func (d *deckConfigOriginalV2) FillPanel(img image.RGBA) error {
 	if img.Bounds().Size().X < d.KeyColumns()*d.IconSize() || img.Bounds().Size().Y < d.KeyRows()*d.IconSize() {
-		return errors.New("Image is too small")
+		return fmt.Errorf("image is too small")
 	}
 
 	for k := 0; k < d.NumKeys(); k++ {
@@ -113,51 +118,11 @@ func (d *deckConfigOriginalV2) FillPanel(img image.RGBA) error {
 		)
 
 		if err := d.FillImage(k, img.SubImage(image.Rect(kx*d.IconSize(), ky*d.IconSize(), (kx+1)*d.IconSize(), (ky+1)*d.IconSize()))); err != nil {
-			return errors.Wrap(err, "Unable to set key image")
+			return fmt.Errorf("setting key image: %w", err)
 		}
 	}
 
 	return nil
-}
-
-func (d *deckConfigOriginalV2) ClearKey(keyIdx int) error {
-	return d.FillColor(keyIdx, color.RGBA{0x0, 0x0, 0x0, 0xff})
-}
-
-func (d *deckConfigOriginalV2) ClearAllKeys() error {
-	for i := 0; i < d.NumKeys(); i++ {
-		if err := d.ClearKey(i); err != nil {
-			return errors.Wrap(err, "Unable to clear key")
-		}
-	}
-	return nil
-}
-
-func (d *deckConfigOriginalV2) SetBrightness(pct int) error {
-	if pct < 0 || pct > 100 {
-		return errors.New("Percentage out of bounds")
-	}
-
-	_, err := d.dev.SendFeatureReport([]byte{
-		0x03, 0x08, byte(pct), 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	})
-
-	return errors.Wrap(err, "Unable to send feature report")
-}
-
-func (d *deckConfigOriginalV2) ResetToLogo() error {
-	_, err := d.dev.SendFeatureReport([]byte{
-		0x03,
-		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	})
-
-	return errors.Wrap(err, "Unable to send feature report")
 }
 
 func (d *deckConfigOriginalV2) GetFimwareVersion() (string, error) {
@@ -166,8 +131,59 @@ func (d *deckConfigOriginalV2) GetFimwareVersion() (string, error) {
 
 	_, err := d.dev.GetFeatureReport(fw)
 	if err != nil {
-		return "", errors.Wrap(err, "Unable to get feature report")
+		return "", fmt.Errorf("getting feature report: %w", err)
 	}
 
 	return strings.TrimRight(string(fw[6:]), "\x00"), nil
 }
+
+func (d *deckConfigOriginalV2) IconBytes() int { return d.IconSize() * d.IconSize() * 3 }
+
+func (*deckConfigOriginalV2) IconSize() int { return 72 }
+
+func (*deckConfigOriginalV2) KeyColumns() int { return 5 }
+
+func (*deckConfigOriginalV2) KeyDataOffset() int { return 4 }
+
+func (*deckConfigOriginalV2) KeyDirection() keyDirection { return keyDirectionLTR }
+
+func (*deckConfigOriginalV2) KeyRows() int { return 3 }
+
+func (*deckConfigOriginalV2) Model() uint16 { return StreamDeckOriginalV2 }
+
+func (*deckConfigOriginalV2) NumKeys() int { return 15 }
+
+func (d *deckConfigOriginalV2) ResetToLogo() error {
+	if _, err := d.dev.SendFeatureReport([]byte{
+		0x03,
+		0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}); err != nil {
+		return fmt.Errorf("sending feature report: %w", err)
+	}
+
+	return nil
+}
+
+func (d *deckConfigOriginalV2) SetBrightness(pct int) error {
+	if pct < 0 || pct > 100 {
+		return fmt.Errorf("percentage %d out of bounds 0-100", pct)
+	}
+
+	if _, err := d.dev.SendFeatureReport([]byte{
+		0x03, 0x08, byte(pct), 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}); err != nil {
+		return fmt.Errorf("sending feature report: %w", err)
+	}
+
+	return nil
+}
+
+func (d *deckConfigOriginalV2) SetDevice(dev *hid.Device) { d.dev = dev }
+
+func (*deckConfigOriginalV2) TransformKeyIndex(keyIdx int) int { return keyIdx }
