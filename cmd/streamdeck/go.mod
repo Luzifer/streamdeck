@@ -11,7 +11,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	github.com/sashko/go-uinput v0.0.0-20200718185411-c753d6644126
+	github.com/sashko/go-uinput v0.0.0-20250718151327-faf003f14a20
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sstallion/go-hid v0.14.1
 	golang.org/x/image v0.21.0

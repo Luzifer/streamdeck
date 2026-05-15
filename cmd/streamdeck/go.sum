@@ -19,8 +19,8 @@ github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 h1:zYyBkD/k9seD2A7fsi6
 github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646/go.mod h1:jpp1/29i3P1S/RLdc7JQKbRpFeM1dOBd8T9ki5s+AY8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/sashko/go-uinput v0.0.0-20200718185411-c753d6644126 h1:qLZdeSxl2fgjTlG/Rwosm+zdTuwte+WvwH61S6XMTjA=
-github.com/sashko/go-uinput v0.0.0-20200718185411-c753d6644126/go.mod h1:5XNvpYRRmWADwhphlimZLWP70oEL1f54E4Guo20fvV4=
+github.com/sashko/go-uinput v0.0.0-20250718151327-faf003f14a20 h1:fA4AOixqSOefnLVy7+DNrcPCPrqog/AalbuhwUpacdI=
+github.com/sashko/go-uinput v0.0.0-20250718151327-faf003f14a20/go.mod h1:5XNvpYRRmWADwhphlimZLWP70oEL1f54E4Guo20fvV4=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
 github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=
