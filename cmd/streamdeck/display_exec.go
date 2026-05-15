@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Luzifer/go_helpers/v2/env"
+	"github.com/Luzifer/go_helpers/env"
 	log "github.com/sirupsen/logrus"
 )
 

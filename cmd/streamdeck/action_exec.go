@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/Luzifer/go_helpers/v2/env"
+	"github.com/Luzifer/go_helpers/env"
 )
 
 type actionExec struct{}

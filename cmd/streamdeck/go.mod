@@ -5,7 +5,7 @@ go 1.26.0
 replace github.com/Luzifer/streamdeck => ../../
 
 require (
-	github.com/Luzifer/go_helpers/v2 v2.25.0
+	github.com/Luzifer/go_helpers/env v0.5.2
 	github.com/Luzifer/rconfig/v2 v2.6.2
 	github.com/Luzifer/streamdeck v1.7.1
 	github.com/fsnotify/fsnotify v1.7.0
@@ -20,6 +20,7 @@ require (
 
 require (
 	github.com/disintegration/imaging v1.6.2 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/sys v0.26.0 // indirect
