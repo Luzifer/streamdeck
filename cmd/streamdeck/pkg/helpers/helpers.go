@@ -1,4 +1,5 @@
-package main
+// Package helpers contains shared rendering and conversion helpers.
+package helpers
 
 import (
 	"errors"
@@ -10,7 +11,8 @@ import (
 	"golang.org/x/image/draw"
 )
 
-func autoSizeImage(img image.Image, size int) image.Image {
+// AutoSizeImage scales and pads an image to the requested square size.
+func AutoSizeImage(img image.Image, size int) image.Image {
 	if img.Bounds().Max.X == size && img.Bounds().Max.Y == size {
 		// Image has perfect size: Nothing to change
 		return img
@@ -39,7 +41,8 @@ func autoSizeImage(img image.Image, size int) image.Image {
 	return dimg
 }
 
-func int4ToRGBA(parts []int) (c color.RGBA, err error) {
+// Int4ToRGBA converts four integer color components into an RGBA color.
+func Int4ToRGBA(parts []int) (c color.RGBA, err error) {
 	if len(parts) != 4 { //revive:disable-line:add-constant // single-use count
 		return c, fmt.Errorf("color definition needs 4 numbers")
 	}

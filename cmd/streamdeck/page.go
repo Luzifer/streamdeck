@@ -5,6 +5,9 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules"
 )
 
 func togglePage(page string) (err error) {
@@ -12,14 +15,6 @@ func togglePage(page string) (err error) {
 		// Ensure old display events are no longer executed
 		activePageCtxCancel()
 	}
-
-	// Reset potentially running looped elements
-	for _, l := range activeLoops {
-		if err := l.StopLoopDisplay(); err != nil {
-			return fmt.Errorf("stopping element refresh: %w", err)
-		}
-	}
-	activeLoops = nil
 
 	activePage = userConfig.Pages[page]
 	activePageName = page
@@ -33,17 +28,17 @@ func togglePage(page string) (err error) {
 			continue
 		}
 
-		go func(idx int, kd keyDefinition) {
+		go func(idx int, kd config.KeyDefinition) {
 			localCtx := activePageCtx
 			keyLogger := logrus.WithFields(logrus.Fields{
 				"key":  idx,
 				"page": activePageName,
 			})
 
-			if err := callDisplayElement(localCtx, idx, kd); err != nil {
+			if err := modules.CallDisplayElement(localCtx, idx, moduleRuntime(), kd); err != nil {
 				keyLogger.WithError(err).Error("Unable to execute display element")
 
-				if err := callErrorDisplayElement(localCtx, idx); err != nil {
+				if err := modules.CallErrorDisplayElement(localCtx, idx, moduleRuntime()); err != nil {
 					keyLogger.WithError(err).Error("Unable to execute error display element")
 				}
 			}
@@ -61,35 +56,17 @@ func togglePage(page string) (err error) {
 	return nil
 }
 
-func (p page) GetKeyDefinitions(cfg config) map[int]keyDefinition {
-	var (
-		defMaps []map[int]keyDefinition
-		result  = make(map[int]keyDefinition)
-	)
-
-	// First process underlay if defined
-	if p.Underlay != "" {
-		defMaps = append(defMaps, cfg.Pages[p.Underlay].Keys)
+func toggleRelativePage(rel int) (err error) {
+	if rel >= len(pageStack) {
+		return fmt.Errorf("relative page %d out of range", rel)
 	}
 
-	// Process current definition
-	defMaps = append(defMaps, p.Keys)
+	nextPage := pageStack[rel]
+	pageStack = pageStack[rel+1:]
 
-	// Last process overlay if defined
-	if p.Overlay != "" {
-		defMaps = append(defMaps, cfg.Pages[p.Overlay].Keys)
+	if err = togglePage(nextPage); err != nil {
+		return fmt.Errorf("switching relative page: %w", err)
 	}
 
-	// Assemble combination of keys
-	for _, pageDef := range defMaps {
-		for idx, kd := range pageDef {
-			if kd.Display.Type == "" {
-				continue
-			}
-
-			result[idx] = kd
-		}
-	}
-
-	return result
+	return nil
 }

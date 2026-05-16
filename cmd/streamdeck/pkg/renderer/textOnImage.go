@@ -1,4 +1,5 @@
-package main
+// Package renderer contains image rendering helpers for key displays.
+package renderer
 
 import (
 	"fmt"
@@ -13,6 +14,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
+
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/helpers"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
 )
 
 const (
@@ -28,31 +33,37 @@ const (
 type (
 	textDrawAnchor uint
 
-	textOnImageRenderer struct {
-		img draw.Image
+	// TextOnImageRenderer draws backgrounds, text, and captions into key-sized images.
+	TextOnImageRenderer struct {
+		devs opts.Runtime
+		img  draw.Image
 	}
 )
 
-func newTextOnImageRenderer() *textOnImageRenderer {
+// NewTextOnImageRenderer creates a renderer for the current StreamDeck key size.
+func NewTextOnImageRenderer(devs opts.Runtime) *TextOnImageRenderer {
 	// Create new black image in icon size
-	var img draw.Image = image.NewRGBA(image.Rect(0, 0, sd.IconSize(), sd.IconSize()))
+	var img draw.Image = image.NewRGBA(image.Rect(0, 0, devs.Deck.IconSize(), devs.Deck.IconSize()))
 	draw.Draw(img, img.Bounds(), image.NewUniform(color.RGBA{0x0, 0x0, 0x0, 0xff}), image.Point{}, draw.Src)
 
-	return &textOnImageRenderer{
-		img: img,
+	return &TextOnImageRenderer{
+		devs: devs,
+		img:  img,
 	}
 }
 
-func (t *textOnImageRenderer) DrawBackground(bgi image.Image) {
-	bgi = autoSizeImage(bgi, sd.IconSize())
+// DrawBackground draws an image as the key background.
+func (t *TextOnImageRenderer) DrawBackground(bgi image.Image) {
+	bgi = helpers.AutoSizeImage(bgi, t.devs.Deck.IconSize())
 	draw.Draw(t.img, t.img.Bounds(), bgi, image.Point{}, draw.Src)
 }
 
-func (t *textOnImageRenderer) DrawBackgroundColor(col color.RGBA) {
-	img := image.NewRGBA(image.Rect(0, 0, sd.IconSize(), sd.IconSize()))
+// DrawBackgroundColor fills the key background with a color.
+func (t *TextOnImageRenderer) DrawBackgroundColor(col color.RGBA) {
+	img := image.NewRGBA(image.Rect(0, 0, t.devs.Deck.IconSize(), t.devs.Deck.IconSize()))
 
-	for x := 0; x < sd.IconSize(); x++ {
-		for y := 0; y < sd.IconSize(); y++ {
+	for x := 0; x < t.devs.Deck.IconSize(); x++ {
+		for y := 0; y < t.devs.Deck.IconSize(); y++ {
 			img.Set(x, y, col)
 		}
 	}
@@ -60,7 +71,8 @@ func (t *textOnImageRenderer) DrawBackgroundColor(col color.RGBA) {
 	t.DrawBackground(img)
 }
 
-func (t *textOnImageRenderer) DrawBackgroundFromFile(filename string) error {
+// DrawBackgroundFromFile loads an image file and draws it as the key background.
+func (t *TextOnImageRenderer) DrawBackgroundFromFile(filename string) error {
 	bgi, err := t.getImageFromDisk(filename)
 	if err != nil {
 		return fmt.Errorf("getting image from disk: %w", err)
@@ -70,9 +82,10 @@ func (t *textOnImageRenderer) DrawBackgroundFromFile(filename string) error {
 	return nil
 }
 
-func (t *textOnImageRenderer) DrawBigText(text string, fontSizeHint float64, border int, textColor color.Color) error {
+// DrawBigText draws centered text scaled to fit the key.
+func (t *TextOnImageRenderer) DrawBigText(text string, fontSizeHint float64, border int, textColor color.Color) error {
 	// Render text
-	f, err := t.loadFont(userConfig.RenderFont)
+	f, err := t.loadFont(t.devs.Conf.RenderFont)
 	if err != nil {
 		return fmt.Errorf("loading font: %w", err)
 	}
@@ -87,10 +100,11 @@ func (t *textOnImageRenderer) DrawBigText(text string, fontSizeHint float64, bor
 	return t.drawText(c, text, textColor, fontSizeHint, border, textDrawAnchorCenter)
 }
 
-func (t *textOnImageRenderer) DrawCaptionText(text string) error {
-	fontFile := userConfig.CaptionFont
+// DrawCaptionText draws caption text using the configured caption style.
+func (t *TextOnImageRenderer) DrawCaptionText(text string) error {
+	fontFile := t.devs.Conf.CaptionFont
 	if fontFile == "" {
-		fontFile = userConfig.RenderFont
+		fontFile = t.devs.Conf.RenderFont
 	}
 
 	// Render text
@@ -100,20 +114,20 @@ func (t *textOnImageRenderer) DrawCaptionText(text string) error {
 	}
 
 	var textColor color.Color = color.RGBA{0xff, 0xff, 0xff, 0xff}
-	if cc, err := int4ToRGBA(userConfig.CaptionColor[:]); err == nil && cc.A != 0x0 { //revive:disable-line:add-constant // just a 0 in hex
+	if cc, err := helpers.Int4ToRGBA(t.devs.Conf.CaptionColor[:]); err == nil && cc.A != 0x0 { //revive:disable-line:add-constant // just a 0 in hex
 		textColor = cc
 	}
 
 	var anchor textDrawAnchor
-	switch userConfig.CaptionPosition {
-	case captionPositionBottom, captionPositionEmpty:
+	switch t.devs.Conf.CaptionPosition {
+	case config.CaptionPositionBottom, config.CaptionPositionEmpty:
 		anchor = textDrawAnchorBottom
 
-	case captionPositionTop:
+	case config.CaptionPositionTop:
 		anchor = textDrawAnchorTop
 
 	default:
-		return fmt.Errorf("invalid caption position %q", userConfig.CaptionPosition)
+		return fmt.Errorf("invalid caption position %q", t.devs.Conf.CaptionPosition)
 	}
 
 	c := freetype.NewContext()
@@ -123,12 +137,13 @@ func (t *textOnImageRenderer) DrawCaptionText(text string) error {
 	c.SetFont(f)
 	c.SetHinting(font.HintingNone)
 
-	return t.drawText(c, text, textColor, userConfig.CaptionFontSize, userConfig.CaptionBorder, anchor)
+	return t.drawText(c, text, textColor, t.devs.Conf.CaptionFontSize, t.devs.Conf.CaptionBorder, anchor)
 }
 
-func (t textOnImageRenderer) GetImage() image.Image { return t.img }
+// GetImage returns the rendered key image.
+func (t TextOnImageRenderer) GetImage() image.Image { return t.img }
 
-func (*textOnImageRenderer) drawText(c *freetype.Context, text string, textColor color.Color, fontsize float64, border int, anchor textDrawAnchor) error {
+func (t *TextOnImageRenderer) drawText(c *freetype.Context, text string, textColor color.Color, fontsize float64, border int, anchor textDrawAnchor) error {
 	c.SetSrc(image.NewUniform(color.RGBA{0x0, 0x0, 0x0, 0x0})) // Transparent for text size guessing
 
 	textLines := strings.Split(text, "\n")
@@ -147,7 +162,7 @@ func (*textOnImageRenderer) drawText(c *freetype.Context, text string, textColor
 			}
 		}
 
-		if int(float64(maxX)/64) > sd.IconSize()-2*border || (int(c.PointToFixed(fontsize)/64))*len(textLines)+(len(textLines)-1)*2 > sd.IconSize()-2*border {
+		if int(float64(maxX)/64) > t.devs.Deck.IconSize()-2*border || (int(c.PointToFixed(fontsize)/64))*len(textLines)+(len(textLines)-1)*2 > t.devs.Deck.IconSize()-2*border {
 			fontsize -= 2
 			continue
 		}
@@ -164,9 +179,9 @@ func (*textOnImageRenderer) drawText(c *freetype.Context, text string, textColor
 	case textDrawAnchorTop:
 		yLineTop = border
 	case textDrawAnchorCenter:
-		yLineTop = int(float64(sd.IconSize())/2.0 - float64(yTotal)/2.0)
+		yLineTop = int(float64(t.devs.Deck.IconSize())/2.0 - float64(yTotal)/2.0)
 	case textDrawAnchorBottom:
-		yLineTop = sd.IconSize() - yTotal - border
+		yLineTop = t.devs.Deck.IconSize() - yTotal - border
 	}
 
 	for _, tl := range textLines {
@@ -178,7 +193,7 @@ func (*textOnImageRenderer) drawText(c *freetype.Context, text string, textColor
 
 		c.SetSrc(image.NewUniform(textColor))
 
-		xcenter := (float64(sd.IconSize()-2*border) / 2.0) - (float64(int(float64(ext.X)/64)) / 2.0) + float64(border)
+		xcenter := (float64(t.devs.Deck.IconSize()-2*border) / 2.0) - (float64(int(float64(ext.X)/64)) / 2.0) + float64(border)
 		ylower := yLineTop + int(c.PointToFixed(fontsize)/64)
 
 		if _, err = c.DrawString(tl, freetype.Pt(int(xcenter), ylower)); err != nil {
@@ -191,7 +206,7 @@ func (*textOnImageRenderer) drawText(c *freetype.Context, text string, textColor
 	return nil
 }
 
-func (textOnImageRenderer) getImageFromDisk(filename string) (image.Image, error) {
+func (TextOnImageRenderer) getImageFromDisk(filename string) (image.Image, error) {
 	f, err := os.Open(filename) //#nosec:G304 // intended to open image from disk
 	if err != nil {
 		return nil, fmt.Errorf("opening image: %w", err)
@@ -210,7 +225,7 @@ func (textOnImageRenderer) getImageFromDisk(filename string) (image.Image, error
 	return img, nil
 }
 
-func (textOnImageRenderer) loadFont(fontfile string) (parsedFont *truetype.Font, err error) {
+func (TextOnImageRenderer) loadFont(fontfile string) (parsedFont *truetype.Font, err error) {
 	fontRaw, err := os.ReadFile(fontfile) //#nosec:G304 // intended to open font from disk
 	if err != nil {
 		return nil, fmt.Errorf("reading font file: %w", err)

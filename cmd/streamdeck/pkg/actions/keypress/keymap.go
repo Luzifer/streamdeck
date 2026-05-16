@@ -1,4 +1,4 @@
-package main
+package keypress
 
 import "github.com/sashko/go-uinput"
 

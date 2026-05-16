@@ -1,11 +1,10 @@
-package main
+// Package image provides image display elements.
+package image
 
 import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	_ "image/jpeg"
-	_ "image/png"
 	"io"
 	"net/http"
 	"os"
@@ -13,23 +12,39 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/renderer"
 )
 
 const cacheDirMode = 0o700
 
-type displayElementImage struct{}
+type (
+	// Display renders an image on a key.
+	Display struct{}
 
-func init() {
-	registerDisplayElement("image", displayElementImage{})
-}
+	// Attrs contains configuration for the image display.
+	Attrs struct {
+		Caption string `json:"caption,omitempty" yaml:"caption,omitempty"`
+		Path    string `json:"path,omitempty" yaml:"path,omitempty"`
+		URL     string `json:"url,omitempty" yaml:"url,omitempty"`
+	}
+)
 
-func (d displayElementImage) Display(ctx context.Context, idx int, attributes attributeCollection) error {
+// Display renders the configured image on the selected key.
+func (d Display) Display(ctx context.Context, idx int, devs opts.Runtime, atts config.DynamicAttributes) error {
+	attributes, err := config.DecodeAttributes[Attrs](atts)
+	if err != nil {
+		return fmt.Errorf("decoding attributes: %w", err)
+	}
+
 	filename, err := d.getRenderImageFileName(ctx, attributes)
 	if err != nil {
 		return err
 	}
 
-	imgRenderer := newTextOnImageRenderer()
+	imgRenderer := renderer.NewTextOnImageRenderer(devs)
 
 	if err = imgRenderer.DrawBackgroundFromFile(filename); err != nil {
 		return fmt.Errorf("drawing background from disk: %w", err)
@@ -46,14 +61,14 @@ func (d displayElementImage) Display(ctx context.Context, idx int, attributes at
 		return fmt.Errorf("page context cancelled: %w", err)
 	}
 
-	if err = sd.FillImage(idx, imgRenderer.GetImage()); err != nil {
+	if err = devs.Deck.FillImage(idx, imgRenderer.GetImage()); err != nil {
 		return fmt.Errorf("setting image: %w", err)
 	}
 
 	return nil
 }
 
-func (displayElementImage) getCacheFileName(url string) (string, error) {
+func (Display) getCacheFileName(url string) (string, error) {
 	ucd, err := os.UserCacheDir()
 	if err != nil {
 		return "", fmt.Errorf("getting user cache dir: %w", err)
@@ -67,7 +82,7 @@ func (displayElementImage) getCacheFileName(url string) (string, error) {
 	return path.Join(cacheDir, fmt.Sprintf("%x", sha256.Sum256([]byte(url)))), nil
 }
 
-func (d displayElementImage) getRenderImageFileName(ctx context.Context, attributes attributeCollection) (filename string, err error) {
+func (d Display) getRenderImageFileName(ctx context.Context, attributes Attrs) (filename string, err error) {
 	if attributes.Path != "" {
 		// User supplied a path, rely on that
 		return attributes.Path, nil

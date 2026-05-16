@@ -16,6 +16,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/Luzifer/streamdeck"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules"
 )
 
 const maxPageStackSize = 100
@@ -29,14 +31,11 @@ var (
 		VersionAndExit bool   `flag:"version" default:"false" description:"Prints current version and exits"`
 	}{}
 
-	currentBrightness int
-
-	userConfig          config
-	activePage          page
+	userConfig          config.File
+	activePage          config.Page
 	activePageCtx       context.Context
 	activePageCtxCancel context.CancelFunc
 	activePageName      string
-	activeLoops         []refreshingDisplayElement
 	pageStack           []string
 
 	sd *streamdeck.Client
@@ -123,8 +122,8 @@ func main() {
 	}).Info("Found StreamDeck")
 
 	// Load config
-	if err = loadConfig(); err != nil {
-		logrus.WithError(err).Fatal("Unable to load config")
+	if userConfig, err = config.Load(cfg.Config, sd); err != nil {
+		logrus.WithError(err).Fatal("loading config")
 	}
 
 	// Initial setup
@@ -141,7 +140,6 @@ func main() {
 	if err = sd.SetBrightness(userConfig.DefaultBrightness); err != nil {
 		logrus.WithError(err).Fatal("Unable to set brightness")
 	}
-	currentBrightness = userConfig.DefaultBrightness
 
 	if err = togglePage(userConfig.DefaultPage); err != nil {
 		logrus.WithError(err).Error("Unable to load default page")
@@ -205,18 +203,8 @@ func main() {
 			if evt.Op&fsnotify.Write == fsnotify.Write {
 				logrus.Info("Detected change of config, reloading")
 
-				if err := loadConfig(); err != nil {
-					logrus.WithError(err).Error("Unable to reload config")
-					continue
-				}
-
-				nextPage := userConfig.DefaultPage
-				if _, ok := userConfig.Pages[activePageName]; ok {
-					nextPage = activePageName
-				}
-
-				if err := togglePage(nextPage); err != nil {
-					logrus.WithError(err).Error("Unable to reload page")
+				if err = reloadConfig(); err != nil {
+					logrus.WithError(err).Error("reloading config")
 					continue
 				}
 			}
@@ -227,8 +215,28 @@ func main() {
 	}
 }
 
+func reloadConfig() (err error) {
+	var tmpConfig config.File
+
+	if tmpConfig, err = config.Load(cfg.Config, sd); err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+	userConfig = tmpConfig
+
+	nextPage := userConfig.DefaultPage
+	if _, ok := userConfig.Pages[activePageName]; ok {
+		nextPage = activePageName
+	}
+
+	if err := togglePage(nextPage); err != nil {
+		return fmt.Errorf("reloading page: %w", err)
+	}
+
+	return nil
+}
+
 //revive:disable-next-line:flag-parameter // does not switch behavior, just denotes whether key was pressed long
-func triggerAction(kd keyDefinition, isLongPress bool) error {
+func triggerAction(kd config.KeyDefinition, isLongPress bool) error {
 	for _, a := range kd.Actions {
 		if a.Type == "" {
 			// No type on that action: Invalid
@@ -240,8 +248,8 @@ func triggerAction(kd keyDefinition, isLongPress bool) error {
 			continue
 		}
 
-		if err := callAction(a); err != nil {
-			return err
+		if err := modules.CallAction(moduleRuntime(), a); err != nil {
+			return fmt.Errorf("calling action: %w", err)
 		}
 	}
 
