@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"strings"
 	"time"
@@ -109,7 +110,12 @@ func (Display) Display(ctx context.Context, idx int, devs opts.Runtime, atts con
 	// Build Text-Render
 	forwardAtts := attributes.Attrs
 
-	switch ct := resp.Header.Get("Content-Type"); ct {
+	ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if err != nil {
+		return fmt.Errorf("parsing content-type: %w", err)
+	}
+
+	switch ct {
 	case "application/json":
 		if err = json.Unmarshal(raw, &forwardAtts); err != nil {
 			return fmt.Errorf("parsing json response: %w", err)
