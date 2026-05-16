@@ -1,3 +1,27 @@
+# 2.0.0 / 2026-05-16
+
+* Breaking Changes
+  * feat!: drop support for PulseAudio
+  * chore!: drop support for deprecated `keys` array in `key_press` action
+
+* New Features
+  * feat: add http display and action
+  * feat: add support for env-var references in config
+  * feat: introduce timeouts for display commands
+
+* Improvements
+  * fix: resolve recurrent errors from exec displays
+
+* Bugfixes
+  * chore: replace deprecated YAML library
+  * fix(deps): update github.com/sashko/go-uinput digest to faf003f
+  * fix(deps): update module github.com/fsnotify/fsnotify to v1.10.1 (#5)
+  * fix(deps): update module github.com/luzifer/rconfig/v2 to v2.6.2 (#6)
+  * fix(deps): update module github.com/sirupsen/logrus to v1.9.4 (#4)
+  * fix(deps): update module github.com/sstallion/go-hid to v0.15.0 (#7)
+  * fix(deps): update module golang.org/x/image to v0.40.0 (#9)
+  * refactor: split code into modules; split config per module
+
 # 1.7.2 / 2024-10-29
 
   * Update Go dependencies
