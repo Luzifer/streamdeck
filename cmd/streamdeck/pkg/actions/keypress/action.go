@@ -20,7 +20,6 @@ type (
 	Attrs struct {
 		Delay    time.Duration `json:"delay,omitempty" yaml:"delay,omitempty"`
 		KeyCodes []int         `json:"key_codes,omitempty" yaml:"key_codes,omitempty"`
-		Keys     []string      `json:"keys,omitempty" yaml:"keys,omitempty"`
 		ModAlt   bool          `json:"mod_alt,omitempty" yaml:"mod_alt,omitempty"`
 		ModCtrl  bool          `json:"mod_ctrl,omitempty" yaml:"mod_ctrl,omitempty"`
 		ModShift bool          `json:"mod_shift,omitempty" yaml:"mod_shift,omitempty"`
@@ -39,37 +38,20 @@ func (a Action) Execute(devs opts.Runtime, atts config.DynamicAttributes) (err e
 
 	var (
 		execCodes []uint16
-
-		keyNames    []string
-		keyCodes    []int
-		useKeyNames bool
+		keyCodes  []int
 	)
 
 	keyCodes = attributes.KeyCodes
 	if keyCodes == nil {
-		keyNames = attributes.Keys
-		if keyNames == nil {
-			return fmt.Errorf("no key_codes or keys array present")
-		}
-		useKeyNames = true
+		return fmt.Errorf("no key_codes array present")
 	}
 
-	if useKeyNames {
-		for _, k := range keyNames {
-			kc, ok := uinputKeyMapping[k]
-			if !ok {
-				return fmt.Errorf("unknown key %q", k)
-			}
-			execCodes = append(execCodes, kc)
+	for _, k := range keyCodes {
+		if k < 0 || k > 65535 { //revive:disable-line:add-constant // single-use boundary
+			return fmt.Errorf("key-code out of bounds 0..65535: %d", k)
 		}
-	} else {
-		for _, k := range keyCodes {
-			if k < 0 || k > 65535 { //revive:disable-line:add-constant // single-use boundary
-				return fmt.Errorf("key-code out of bounds 0..65535: %d", k)
-			}
 
-			execCodes = append(execCodes, uint16(k))
-		}
+		execCodes = append(execCodes, uint16(k))
 	}
 
 	if attributes.ModShift {
