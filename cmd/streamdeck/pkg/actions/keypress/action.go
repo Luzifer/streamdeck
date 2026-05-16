@@ -36,17 +36,12 @@ func (a Action) Execute(devs opts.Runtime, atts config.DynamicAttributes) (err e
 		return fmt.Errorf("decoding attributes: %w", err)
 	}
 
-	var (
-		execCodes []uint16
-		keyCodes  []int
-	)
-
-	keyCodes = attributes.KeyCodes
-	if keyCodes == nil {
+	if attributes.KeyCodes == nil {
 		return fmt.Errorf("no key_codes array present")
 	}
 
-	for _, k := range keyCodes {
+	var execCodes []uint16
+	for _, k := range attributes.KeyCodes {
 		if k < 0 || k > 65535 { //revive:disable-line:add-constant // single-use boundary
 			return fmt.Errorf("key-code out of bounds 0..65535: %d", k)
 		}
