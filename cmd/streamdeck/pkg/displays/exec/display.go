@@ -105,18 +105,19 @@ func (d *Display) StartLoopDisplay(ctx context.Context, idx int, devs opts.Runti
 		defer tick.Stop()
 
 		for {
+			if err := d.Display(ctx, idx, devs, atts); err != nil {
+				if errors.Is(ctx.Err(), context.Canceled) {
+					return
+				}
+
+				log.WithError(err).Error("refreshing element")
+			}
+
 			select {
 			case <-ctx.Done():
 				return
 
 			case <-tick.C:
-				if err := d.Display(ctx, idx, devs, atts); err != nil {
-					if errors.Is(ctx.Err(), context.Canceled) {
-						return
-					}
-
-					log.WithError(err).Error("refreshing element")
-				}
 			}
 		}
 	}()
