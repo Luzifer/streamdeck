@@ -2,6 +2,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"time"
@@ -76,7 +77,23 @@ func Load(confFile string, deck *streamdeck.Client) (f File, err error) {
 		}
 	}()
 
+	var rawConf yaml.Node
+
 	decoder := yaml.NewDecoder(userConfFile)
+	if err = decoder.Decode(&rawConf); err != nil {
+		return f, fmt.Errorf("parsing config: %w", err)
+	}
+
+	if err = expandEnvVariables(&rawConf); err != nil {
+		return f, fmt.Errorf("expanding env variables: %w", err)
+	}
+
+	buf := new(bytes.Buffer)
+	if err = yaml.NewEncoder(buf).Encode(&rawConf); err != nil {
+		return f, fmt.Errorf("encoding expanded config: %w", err)
+	}
+
+	decoder = yaml.NewDecoder(buf)
 	f = New()
 
 	decoder.KnownFields(true)
