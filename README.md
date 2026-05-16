@@ -1,7 +1,6 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/Luzifer/streamdeck)](https://goreportcard.com/report/github.com/Luzifer/streamdeck)
-![](https://badges.fyi/github/license/Luzifer/streamdeck)
-![](https://badges.fyi/github/downloads/Luzifer/streamdeck)
-![](https://badges.fyi/github/latest-release/Luzifer/streamdeck)
+![GitHub License](https://img.shields.io/github/license/Luzifer/streamdeck)
+![GitHub Downloads](https://img.shields.io/github/downloads/Luzifer/streamdeck/total)
+![GitHub Release](https://img.shields.io/github/v/release/Luzifer/streamdeck)
 ![](https://knut.in/project-status/streamdeck)
 
 # Luzifer / streamdeck
