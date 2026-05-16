@@ -32,6 +32,7 @@ type (
 		Command  []string          `json:"command,omitempty" yaml:"command,omitempty"`
 		Env      map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
 		Interval time.Duration     `json:"interval,omitempty" yaml:"interval,omitempty"`
+		Timeout  time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 
 		text.Attrs `yaml:",inline"`
 	}
@@ -53,10 +54,21 @@ func (Display) Display(ctx context.Context, idx int, devs opts.Runtime, atts con
 	buf := new(bytes.Buffer)
 
 	processEnv := env.ListToMap(os.Environ())
-
 	maps.Copy(processEnv, attributes.Env)
 
-	command := exec.CommandContext(ctx, attributes.Command[0], attributes.Command[1:]...) //#nosec:G204 // intended to run user-defined command
+	var (
+		cancel context.CancelFunc
+		cmdCtx = ctx
+	)
+	if attributes.Timeout > 0 {
+		cmdCtx, cancel = context.WithTimeout(ctx, attributes.Timeout)
+		defer cancel()
+	} else if attributes.Interval > minLoopInterval {
+		cmdCtx, cancel = context.WithTimeout(ctx, attributes.Interval)
+		defer cancel()
+	}
+
+	command := exec.CommandContext(cmdCtx, attributes.Command[0], attributes.Command[1:]...) //#nosec:G204 // intended to run user-defined command
 	command.Env = env.MapToList(processEnv)
 	command.Stdout = buf
 
