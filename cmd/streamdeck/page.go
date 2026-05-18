@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules"
 	"github.com/sirupsen/logrus"
-
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules"
 )
 
 func togglePage(page string) (err error) {

@@ -7,10 +7,10 @@ import (
 	"image/color"
 	"strings"
 
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/helpers"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/renderer"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/helpers"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules/opts"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/renderer"
 )
 
 const defaultTextToImageBorderSize = 10 // Pixel

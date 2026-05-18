@@ -9,15 +9,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/helpers"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules/opts"
 	"github.com/golang/freetype"
 	"github.com/golang/freetype/truetype"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
-
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/helpers"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
 )
 
 const (

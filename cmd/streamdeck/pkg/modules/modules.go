@@ -7,11 +7,10 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/displays/color"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules/opts"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/displays/color"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
 )
 
 const errorDisplayElementType = "color"

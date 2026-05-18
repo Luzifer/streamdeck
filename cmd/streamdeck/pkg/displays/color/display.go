@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"image/color"
 
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/helpers"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/helpers"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules/opts"
 )
 
 type (

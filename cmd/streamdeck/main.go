@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/Luzifer/rconfig/v2"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules"
 	"github.com/fsnotify/fsnotify"
 	"github.com/sashko/go-uinput"
 	"github.com/sirupsen/logrus"
 
-	"github.com/Luzifer/streamdeck"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules"
+	"github.com/Luzifer/streamdeck/v2"
 )
 
 const maxPageStackSize = 100

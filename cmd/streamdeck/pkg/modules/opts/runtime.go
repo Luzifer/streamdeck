@@ -2,10 +2,10 @@
 package opts
 
 import (
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
 	"github.com/sashko/go-uinput"
 
-	"github.com/Luzifer/streamdeck"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
+	"github.com/Luzifer/streamdeck/v2"
 )
 
 type (

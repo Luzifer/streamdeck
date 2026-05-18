@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.yaml.in/yaml/v3"
 
-	"github.com/Luzifer/streamdeck"
+	"github.com/Luzifer/streamdeck/v2"
 )
 
 const defaultLongPressDuration = 500 * time.Millisecond

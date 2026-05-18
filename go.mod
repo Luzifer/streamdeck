@@ -1,4 +1,4 @@
-module github.com/Luzifer/streamdeck
+module github.com/Luzifer/streamdeck/v2
 
 go 1.26.0
 

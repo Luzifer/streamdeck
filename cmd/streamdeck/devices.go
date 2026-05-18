@@ -1,6 +1,6 @@
 package main
 
-import "github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
+import "github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules/opts"
 
 func moduleRuntime() opts.Runtime {
 	return opts.Runtime{

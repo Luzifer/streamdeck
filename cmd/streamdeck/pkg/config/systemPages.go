@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/Luzifer/streamdeck"
+	"github.com/Luzifer/streamdeck/v2"
 )
 
 func applySystemPages(deck *streamdeck.Client, conf *File) {

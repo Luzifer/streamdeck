@@ -1,13 +1,13 @@
-module github.com/Luzifer/streamdeck/cmd/streamdeck
+module github.com/Luzifer/streamdeck/cmd/streamdeck/v2
 
 go 1.26.0
 
-replace github.com/Luzifer/streamdeck => ../../
+replace github.com/Luzifer/streamdeck/v2 => ../../
 
 require (
 	github.com/Luzifer/go_helpers/env v0.5.2
 	github.com/Luzifer/rconfig/v2 v2.6.2
-	github.com/Luzifer/streamdeck v1.7.1
+	github.com/Luzifer/streamdeck/v2 v2.0.0
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646

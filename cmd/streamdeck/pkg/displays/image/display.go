@@ -11,11 +11,10 @@ import (
 	"path"
 	"strings"
 
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules/opts"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/renderer"
 	"github.com/sirupsen/logrus"
-
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/renderer"
 )
 
 const cacheDirMode = 0o700

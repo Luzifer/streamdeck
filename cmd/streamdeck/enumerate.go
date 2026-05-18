@@ -7,7 +7,7 @@ import (
 
 	"github.com/sstallion/go-hid"
 
-	"github.com/Luzifer/streamdeck"
+	"github.com/Luzifer/streamdeck/v2"
 )
 
 func getAvailableDecks() (out []uint16, err error) {

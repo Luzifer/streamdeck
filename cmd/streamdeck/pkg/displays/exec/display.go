@@ -14,11 +14,10 @@ import (
 	"time"
 
 	"github.com/Luzifer/go_helpers/env"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/displays/text"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules/opts"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/displays/text"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
 )
 
 const minLoopInterval = 100 * time.Millisecond

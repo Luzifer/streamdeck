@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/config"
+	"github.com/Luzifer/streamdeck/cmd/streamdeck/v2/pkg/modules/opts"
 	"github.com/sashko/go-uinput"
-
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/config"
-	"github.com/Luzifer/streamdeck/cmd/streamdeck/pkg/modules/opts"
 )
 
 type (
