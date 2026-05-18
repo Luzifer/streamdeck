@@ -1,0 +1,18 @@
+# Template to format the commit message containing the changelog change
+# which will be used to add the tag to.
+release_commit_message: "release: streamdeck {{.Version}}"
+
+# Commands to run before committing the changelog and adding the tag.
+# Therefore these can add content to be included into the release-
+# commit. These commands have access to the `TAG_VERSION` variable
+# which contains the tag to be applied after the commit. If the
+# command specified here is prefixed with a `-` sign, the exit status
+# will not fail the release process. If it is not prefixed with a `-`
+# a non-zero exit status will terminate the release process. The
+# commands will be run from the repostory root, so sub-dirs MUST be
+# specified. All commands are run as `bash -ec "..."` so you can use
+# bash inside the commands.
+pre_commit_commands:
+  - |-
+    sed -i "s@github.com/Luzifer/streamdeck/v2 v.*@github.com/Luzifer/streamdeck/v2 v${TAG_VERSION}@" cmd/streamdeck/go.mod
+    git add cmd/streamdeck/go.mod
