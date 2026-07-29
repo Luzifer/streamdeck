@@ -15,7 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.9.4
 	github.com/sstallion/go-hid v0.15.0
 	github.com/stretchr/testify v1.11.1
-	go.yaml.in/yaml/v3 v3.0.4
+	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/image v0.44.0
 )
 
