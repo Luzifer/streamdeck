@@ -14,7 +14,7 @@ require (
 	github.com/sashko/go-uinput v0.0.0-20250718151327-faf003f14a20
 	github.com/sirupsen/logrus v1.10.0
 	github.com/sstallion/go-hid v0.15.0
-	github.com/stretchr/testify v1.12.0
+	github.com/stretchr/testify v1.12.1
 	go.yaml.in/yaml/v3 v3.0.5
 	golang.org/x/image v0.45.0
 )
@@ -25,5 +25,4 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	gopkg.in/validator.v2 v2.0.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
