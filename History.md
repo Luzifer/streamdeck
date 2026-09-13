@@ -1,3 +1,10 @@
+# 2.0.2 / 2026-09-13
+
+  * fix(deps): update module github.com/sirupsen/logrus to v1.10.2 (#23)
+  * fix(deps): update module github.com/stretchr/testify to v1.12.1 (#21)
+  * fix(deps): update module golang.org/x/image to v0.46.0 (#24)
+  * fix(deps): update module go.yaml.in/yaml/v3 to v3.0.5 (#17)
+
 # 2.0.1 / 2026-05-18
 
   * chore: update module references to v2 versioning
