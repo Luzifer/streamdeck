@@ -5,7 +5,7 @@ go 1.26.0
 replace github.com/Luzifer/streamdeck/v2 => ../../
 
 require (
-	github.com/Luzifer/go_helpers/env v0.5.2
+	github.com/Luzifer/go_helpers/env v0.5.4
 	github.com/Luzifer/rconfig/v2 v2.6.2
 	github.com/Luzifer/streamdeck/v2 v2.0.2
 	github.com/fsnotify/fsnotify v1.10.1
