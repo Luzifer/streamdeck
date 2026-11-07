@@ -9,7 +9,7 @@ import (
 	"image/color"
 	"sync"
 
-	"github.com/disintegration/imaging"
+	"github.com/kovidgoyal/imaging"
 	"github.com/sstallion/go-hid"
 	"golang.org/x/image/bmp"
 )

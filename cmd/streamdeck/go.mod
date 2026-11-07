@@ -20,8 +20,11 @@ require (
 )
 
 require (
-	github.com/disintegration/imaging v1.6.2 // indirect
+	github.com/kovidgoyal/go-parallel v1.1.1 // indirect
+	github.com/kovidgoyal/go-shm v1.0.0 // indirect
+	github.com/kovidgoyal/imaging v1.9.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	gopkg.in/validator.v2 v2.0.1 // indirect

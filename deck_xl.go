@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/disintegration/imaging"
+	"github.com/kovidgoyal/imaging"
 	"github.com/sstallion/go-hid"
 )
 
