@@ -1,3 +1,11 @@
+# 2.0.3 / 2026-11-07
+
+  * chore(sec): replace disintegration/imaging with kovidgoyal/imaging
+  * fix(deps): update module github.com/luzifer/go_helpers/env to v0.5.4 (#25)
+  * fix(deps): update module github.com/sashko/go-uinput to v0.2.2 (#28)
+  * fix(deps): update module golang.org/x/image to v0.47.0 (#29)
+  * fix(deps): update module go.yaml.in/yaml/v3 to v3.0.6 (#30)
+
 # 2.0.2 / 2026-09-13
 
   * fix(deps): update module github.com/sirupsen/logrus to v1.10.2 (#23)
