@@ -6,7 +6,7 @@ replace github.com/Luzifer/streamdeck/v2 => ../../
 
 require (
 	github.com/Luzifer/go_helpers/env v0.5.4
-	github.com/Luzifer/rconfig/v2 v2.6.2
+	github.com/Luzifer/rconfig/v2 v2.6.3
 	github.com/Luzifer/streamdeck/v2 v2.0.3
 	github.com/fsnotify/fsnotify v1.10.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
